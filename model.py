@@ -37,4 +37,4 @@ print(f"✅ Modelo entrenado con precisión: {precision:.2f}")
 # Guardar el modelo entrenado
 joblib.dump(modelo, "modelo_candidatos.pkl")  # Guardar el modelo
 
-print("✅ Modelo y encoders guardados exitosamente.")
+print("✅ Modelo guardado exitosamente.")
