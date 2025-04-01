@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
-import joblib  
+import joblib
 
 # Cargar el conjunto de datos
 df = pd.read_csv("candidatos.csv")
@@ -36,5 +36,7 @@ print(f"✅ Modelo entrenado con precisión: {precision:.2f}")
 
 # Guardar el modelo entrenado
 joblib.dump(modelo, "modelo_candidatos.pkl")  # Guardar el modelo
-
-print("✅ Modelo guardado exitosamente.")
+joblib.dump(encoder_educacion, "encoder_educacion.pkl")
+joblib.dump(encoder_habilidades, "encoder_habilidades.pkl")
+joblib.dump(encoder_tecnologias, "encoder_tecnologias.pkl")
+print("✅ Modelo y encoders guardados exitosamente.")

@@ -1,24 +1,21 @@
 import joblib
 import pandas as pd
 
-# Cargar el modelo entrenado
+# Cargar el modelo entrenado y los encoders
 modelo = joblib.load("modelo_candidatos.pkl")
+encoder_educacion = joblib.load("encoder_educacion.pkl")
+encoder_habilidades = joblib.load("encoder_habilidades.pkl")
+encoder_tecnologias = joblib.load("encoder_tecnologias.pkl")
 
 # Cargar los datos desde el CSV
 df = pd.read_csv("candidatosAPredecir.csv")
 
-# Mapeo de valores categóricos a números
-educacion_map = {"Secundario": 0, "Universitario": 1, "Postgrado": 2}
-habilidades_map = {"Trabajo en equipo": 0, "Comunicación efectiva": 1, "Adaptabilidad": 2,
-                   "Liderazgo": 3, "Resolución de problemas": 4, "Empatía": 5}
-tecnologias_map = {"Python": 0, "Java": 1, "SQL": 2, "C++": 3}
+# Transformar los datos utilizando los encoders guardados
+df["Educacion"] = encoder_educacion.transform(df["Educacion"])
+df["Habilidades"] = encoder_habilidades.transform(df["Habilidades"])
+df["Tecnologías"] = encoder_tecnologias.transform(df["Tecnologías"])
 
-# Aplicar los mapeos
-df["Educacion"] = df["Educacion"].map(educacion_map)
-df["Habilidades"] = df["Habilidades"].map(habilidades_map)
-df["Tecnologías"] = df["Tecnologías"].map(tecnologias_map)
-
-# Verificar si hay valores nulos (errores en el mapeo)
+# Verificar si hay valores nulos (errores en la transformación)
 if df[["Educacion", "Habilidades", "Tecnologías"]].isnull().values.any():
     raise ValueError("Error en la conversión de datos. Revisa que todas las categorías sean correctas.")
 
