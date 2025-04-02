@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score
 import joblib
 
 # Cargar el conjunto de datos
-df = pd.read_csv("candidatos.csv")
+df = pd.read_csv("candidatos2.csv")
 
 # Estandarizado de datos
 encoder_educacion = LabelEncoder()
