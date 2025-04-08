@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>IA de PREDICCION de Aptitud</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='StylesIndex.css') }}">
+</head>
+
+<header>
+    <!-- Sección del logo -->
+    <div class="logo">
+        <img src="{{ url_for('static', filename='images/IALogoTop.png') }}" alt="AI Image"> <!-- Agrega tu imagen aquí -->
+    </div>
+    <!-- Sección de navegación -->
+    <div class="nav">
+        <a href="{{ url_for('crear_csv') }}">Crear CSV</a>
+        <a href="{{ url_for('actualizar_modelo') }}">Actualizar Modelo</a>
+    </div>
+
+    <!--
+    <div class="language-selector">
+        <button id="language-button" class="buttonLanguageInd">
+            Idioma</button>
+        <div id="language-dropdown" style="display: none;">
+            <button data-lang="es" class="ess"><img src="Images/ArgentinaS.png" alt="ES"> Español</button>
+            <button data-lang="en" class="enn"><img src="Images/UsaS.png" alt="EN"> English</button>
+        </div>
+    </div>
+    -->
+</header>
+
+<body>
+    <h1>Predicción de Candidatos</h1>
+    
+    <form action="/predecir" method="post" enctype="multipart/form-data">
+        <h3>Sube un archivo CSV para hacer predicciones:</h3>
+        <label class="file-label">
+            <input type="file" name="archivo_csv" id="archivo_csv" accept=".csv" required>
+            Subir archivo
+        </label>
+        <p id="nombre-archivo"></p>
+        <button class="Highbutton" type="submit">Predecir</button>
+    </form>
+    
+    
+    <script src="{{ url_for('static', filename='js/nombreArchivo.js') }}"></script>
+
+</body>
+
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-logo">
+            <img src="{{ url_for('static', filename='images/IALogoTop.png') }}" alt="AI Image">
+        </div>
+        <div class="footer-description">
+            <p>
+                Abal, Fernando Gabriel<br>
+                Bianciotto, Matías Felipe<br>
+                Gutiérrez, Diego Germán<br>
+                Roldan Sambrana, Guadalupe Milagros<br>
+                Sotelo, Evelyn Romina
+
+            </p>
+        </div>
+        <div class="footer-contacts">
+            <div class="footer-country">
+                <div class="address">
+                    <img src="{{ url_for('static', filename='images/ArgentinaS.png') }}" alt="Argentina Flag">
+                    <p>Argentina</p>
+                    <p>Buenos Aires</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>©2025 IA Para Predicción De Candidatos, -Python- "Sickit-Learn Árboles de decisión"</p>
+    </div>
+</footer>
+</html>
