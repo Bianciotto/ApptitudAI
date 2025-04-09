@@ -9,12 +9,11 @@
 </head>
 
 <header>
-    <!-- Sección del logo -->
     <div class="logo">
-        <img src="{{ url_for('static', filename='images/IALogoTop.png') }}" alt="AI Image">
+        <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image">
     </div>
     <div class="nav">
-        <a href="{{ url_for('home') }}">Predecir</a>
+        <a href="{{ url_for('predecir') }}">Predecir</a>
         <a href="{{ url_for('actualizar_modelo') }}">Actualizar Modelo</a>
     </div>
 </header>
@@ -22,30 +21,30 @@
 <body>
     <h1>Crear un nuevo archivo CSV</h1>
     <form method="post" action="/crear">
-        <label for="nombre">Nombre:</label>
+        <label for="nombre">Nombre</label>
         <input type="text" name="nombre" id="nombre" required>
         
-        <label for="apellido">Apellido:</label>
+        <label for="apellido">Apellido</label>
         <input type="text" name="apellido" id="apellido" required>
         
-        <label for="experiencia">Experiencia (en años):</label>
+        <label for="experiencia">Experiencia (en años)</label>
         <input type="number" min="0" max="15" name="experiencia" id="experiencia" required>
         
-        <label for="educacion">Educación:</label>
+        <label for="educacion">Educación</label>
         <select name="educacion" id="educacion">
             {% for opcion in opciones_educacion %}
             <option value="{{ opcion }}">{{ opcion }}</option>
             {% endfor %}
         </select>
         
-        <label for="tecnologias">Tecnologías:</label>
+        <label for="tecnologias">Tecnologías</label>
         <select name="tecnologias" id="tecnologias">
             {% for opcion in opciones_tecnologias %}
             <option value="{{ opcion }}">{{ opcion }}</option>
             {% endfor %}
         </select>
         
-        <label for="habilidades">Habilidades:</label>
+        <label for="habilidades">Habilidades</label>
         <select name="habilidades" id="habilidades">
             {% for opcion in opciones_habilidades %}
             <option value="{{ opcion }}">{{ opcion }}</option>
@@ -98,14 +97,14 @@
 <footer class="footer">
     <div class="footer-content">
         <div class="footer-logo">
-            <img src="{{ url_for('static', filename='images/IALogoTop.png') }}" alt="AI Image">
+            <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image">
         </div>
         <div class="footer-description">
             <p>
                 Abal, Fernando Gabriel<br>
                 Bianciotto, Matías Felipe<br>
                 Gutiérrez, Diego Germán<br>
-                Roldan Sambrana, Guadalupe Milagros<br>
+                Roldan, Guadalupe<br>
                 Sotelo, Evelyn Romina
             </p>
         </div>
@@ -120,7 +119,7 @@
         </div>
     </div>
     <div class="footer-bottom">
-        <p>©2025 IA Para Predicción De Candidatos, -Python- "Scikit-Learn Árboles de decisión"</p>
+        <p>©2025 IA para la Predicción de Candidatos — Desarrollado en Python con Scikit-Learn y Árboles de Decisión</p>
     </div>
 </footer>
 

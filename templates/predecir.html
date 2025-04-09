@@ -4,37 +4,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Actualizar Modelo</title>
+    <title>IA de PREDICCION de Aptitud</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='StylesIndex.css') }}">
 </head>
 
 <header>
-    <!-- Sección del logo -->
+    
     <div class="logo">
-        <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image">
+        <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image"> <!-- Agrega tu imagen aquí -->
     </div>
+    
     <div class="nav">
-        <a href="{{ url_for('predecir') }}">Predecir</a>
         <a href="{{ url_for('crear_csv') }}">Crear CSV</a>
+        <a href="{{ url_for('actualizar_modelo') }}">Actualizar Modelo</a>
     </div>
 </header>
 
 <body>
-    <h1>Actualizar el Modelo de Predicción</h1>
     
-    <form method="post" enctype="multipart/form-data" action="/actualizar_modelo">
-        <h3>Sube un archivo CSV para entrenar la IA:</h3>
+    <h1 id="typewriter"></h1>
+    
+    <form action="/predecir" method="post" enctype="multipart/form-data">
+        <h3>Sube un archivo CSV para hacer predicciones:</h3>
         <label class="file-label">
-            <input type="file" name="nuevo_csv" id="archivo_csv" accept=".csv" required>
+            <input type="file" name="archivo_csv" id="archivo_csv" accept=".csv" required>
             Subir archivo
         </label>
         <p id="nombre-archivo"></p>
-        <button class="Highbutton" type="submit">Entrenar</button>
+        <button class="Highbutton" type="submit">Predecir</button>
     </form>
-   
+    
+    <form action="/estadisticas" method="get" style=" box-shadow: 0 4px 10px rgb(73, 194, 250); border-radius: 34px; background: rgba(24, 24, 24, 0.76);">
+        <button style="background-color:#0078A0;"  type="submit" >Estadísticas</button>
+    </form>
 
     <h2>Ejemplo</h2>
-
+    
     <div class="tabla-container">
         <table>
             <thead>
@@ -59,8 +64,10 @@
             </tbody>
         </table>
     </div>
+
     
     <script src="{{ url_for('static', filename='js/nombreArchivo.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/typewriter.js') }}"></script> <!-- Script del efecto de máquina de escribir -->
 </body>
 
 <footer class="footer">
@@ -91,5 +98,4 @@
         <p>©2025 IA para la Predicción de Candidatos — Desarrollado en Python con Scikit-Learn y Árboles de Decisión</p>
     </div>
 </footer>
-
 </html>
