@@ -14,7 +14,7 @@
     </div>
     <div class="nav">
         <a href="{{ url_for('predecir') }}">Predecir</a>
-        <a href="{{ url_for('actualizar_modelo') }}">Actualizar Modelo</a>
+        <!-- <a href="{{ url_for('actualizar_modelo') }}">Actualizar Modelo</a> -->
     </div>
 </header>
 
@@ -26,6 +26,15 @@
         
         <label for="apellido">Apellido</label>
         <input type="text" name="apellido" id="apellido" required>
+
+        <label for="email">Correo eléctronico</label>
+        <input type="text" name="email" id="email" required>
+
+        <label for="telefono">Teléfono</label>
+        <input type="text" name="telefono" id="telefono" required>
+
+        <label for="ubicacion">Ubicación</label>
+        <input type="text" name="ubicacion" id="ubicacion" required>
         
         <label for="experiencia">Experiencia (en años)</label>
         <input type="number" min="0" max="15" name="experiencia" id="experiencia" required>
@@ -62,6 +71,9 @@
                 <tr>
                     <th>Nombre</th>
                     <th>Apellido</th>
+                    <th>Correo eléctronico</th>
+                    <th>Teléfono</th>
+                    <th>Ubicación</th>
                     <th>Experiencia</th>
                     <th>Educación</th>
                     <th>Tecnologías</th>
@@ -74,6 +86,9 @@
                 <tr>
                     <td>{{ candidato["Nombre"] }}</td>
                     <td>{{ candidato["Apellido"] }}</td>
+                    <td>{{ candidato["Correo electrónico"] }}</td>
+                    <td>{{ candidato["Teléfono"] }}</td>
+                    <td>{{ candidato["Ubicación"] }}</td>
                     <td>{{ candidato["Experiencia"] }}</td>
                     <td>{{ candidato["Educacion"] }}</td>
                     <td>{{ candidato["Tecnologías"] }}</td>
@@ -102,6 +117,7 @@
         <div class="footer-description">
             <p>
                 Abal, Fernando Gabriel<br>
+                Ábalos, Lucas Gabriel<br>
                 Bianciotto, Matías Felipe<br>
                 Gutiérrez, Diego Germán<br>
                 Roldan, Guadalupe<br>

@@ -59,10 +59,6 @@ header .nav a:hover {
     color: white; 
 }
 
-
-
-
-
 @media (max-width: 800px) {
     header .nav a {
         font-size: 1.1rem;
@@ -90,8 +86,6 @@ header .nav a:hover {
         max-width: 100%;
     }
 }
-
-
 
 .language-selector {
     padding-right: 2rem;
@@ -158,21 +152,6 @@ h2, h3 {
     text-shadow: 4px 4px 8px #000000;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .titulo {
     text-align: center;
     font-size: 3rem;
@@ -200,23 +179,6 @@ h2, h3 {
     margin: 20px auto; 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .accuracy {
     text-align: center;
     font-size: 1.5rem;
@@ -227,32 +189,6 @@ h2, h3 {
     padding: 15px;
     box-shadow: 0 4px 10px rgba(0, 120, 160, 0.5);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 form {
     margin: 20px auto;

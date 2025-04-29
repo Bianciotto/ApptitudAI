@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, send_file, session
+from flask import Flask, redirect, render_template, request, send_file, session, url_for
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
@@ -9,14 +9,72 @@ import joblib
 import os
 import sys
 import matplotlib.pyplot as plt
+from flask_sqlalchemy import SQLAlchemy
 import io
 import base64
-
-
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 app = Flask(__name__)
 app.secret_key = "MiraQueSéQueMeVes"  # Necesario para sesiones
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///erp_rrhh.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+print("Base de datos utilizada:", app.config['SQLALCHEMY_DATABASE_URI'])
+
+
+class Candidato(db.Model):
+    id = db.Column(db.String, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    mail = db.Column(db.String(100), nullable=False, unique=True)
+    ubicacion = db.Column(db.String(100), nullable=False)
+    experiencia = db.Column(db.Integer, nullable=False)
+    idedu = db.Column(db.Integer, db.ForeignKey('educacion.idedu'))
+    idtec = db.Column(db.Integer, db.ForeignKey('tecnologia.idtec'))
+    idhab = db.Column(db.Integer, db.ForeignKey('habilidad.idhab'))
+    aptitud = db.Column(db.Boolean, nullable=False)
+
+class Educacion(db.Model):
+    __tablename__ = 'educacion'
+    idedu = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    importancia = db.Column(db.Integer, nullable=False)
+
+class Tecnologia(db.Model):
+    __tablename__ = 'tecnologia'
+    idtec = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    importancia = db.Column(db.Integer, nullable=False)
+
+class Habilidad(db.Model):
+    __tablename__ = 'habilidad'
+    idhab = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    importancia = db.Column(db.Integer, nullable=False)
+    
+class Usuario(db.Model):
+    __tablename__ = 'usuario'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), nullable=False, unique=True)
+    password = db.Column(db.String(100), nullable=False)
+    type = db.Column(db.String(50), nullable=False)
+
+# Crear la base de datos y agregar usuarios ficticios si no existen
+#if not os.path.exists("erp_rrhh.db"):
+    #with app.app_context():
+        #db.create_all()
+        # Agregar usuarios ficticios
+        #usuario_admin = Usuario(username="Fernando", password=generate_password_hash("admin123", method="pbkdf2:sha256"), type="Admin_RRHH")
+        #usuario_supervisor = Usuario(username="Diego", password=generate_password_hash("supervisor123", method="pbkdf2:sha256"), type="Supervisor")
+        #usuario_analista = Usuario(username="Guada", password=generate_password_hash("analista123", method="pbkdf2:sha256"), type="Analista_Datos")
+        
+        #db.session.add(usuario_admin)
+        #db.session.add(usuario_supervisor)
+        #db.session.add(usuario_analista)
+        #db.session.commit()
+        #print("Usuarios ficticios creados con éxito.")
+
 
 def abrir_navegador():
     webbrowser.open("http://127.0.0.1:5000/")  # URL de Flask
@@ -49,9 +107,63 @@ except Exception as e:
     raise e
 
 # Página principal
+
+@app.route('/')
+def index():
+    return redirect('/login')
+
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = Usuario.query.filter_by(username=username).first()
+        
+        if user and check_password_hash(user.password, password):
+            session['username'] = user.username
+            session['type'] = user.type
+            # Redirige según el rol usando url_for
+            if user.type == "Admin_RRHH":
+                return redirect(url_for('admin_rrhh'))
+            elif user.type == "Supervisor":
+                return redirect(url_for('supervisor'))
+            elif user.type == "Analista_Datos":
+                return redirect(url_for('analista'))
+            else:
+                return "Rol no reconocido"
+        else:
+            return "Credenciales inválidas"
+    return render_template("auth/login.html")
+
+
+@app.route('/admin_rrhh')
+def admin_rrhh():
+    #if 'username' in session and session.get('type') == "Admin_RRHH":
+        #return f"Bienvenido {session.get('username')} al panel de Administrador de RRHH."
+    return redirect('/predecir')
+
+
+@app.route('/supervisor')
+def supervisor():
+    if 'username' in session and session.get('type') == "Supervisor":
+        return f"Bienvenido {session.get('username')} al panel de Supervisor."
+    return redirect('/login')
+
+
+@app.route('/analista')
+def analista():
+    if 'username' in session and session.get('type') == "Analista_Datos":
+        return f"Bienvenido {session.get('username')} al panel de Analista de Datos."
+    return redirect('/login')
+
+
+
+
+"""
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 @app.route("/", methods=["GET", "POST"])
 def entrenar_inicio():
@@ -107,7 +219,7 @@ def entrenar_inicio():
             return f"❌ Ocurrió un error durante el entrenamiento: {e}"
 
     return render_template("index.html")
-
+"""
 
 # Página de estadísticas
 @app.route("/estadisticas", methods=["GET", "POST"])
@@ -232,7 +344,83 @@ def predecir():
     
     return render_template("predecir.html")
 
-    
+
+
+
+@app.route("/postulantes")
+def postulantes():
+    entrenamientoActualizado_path = get_path("candidatosLocales.csv")
+    dataSet = pd.read_csv(entrenamientoActualizado_path)
+
+    # Reemplazar NaN en la columna 'Apto' por 'No revisado'
+    if "Apto" in dataSet.columns:
+        dataSet["Apto"] = dataSet["Apto"].fillna("No revisado")
+
+    # Filtro si viene por parámetro
+    filtro = request.args.get("filtro")
+    if filtro == "apto":
+        dataSet = dataSet[dataSet["Apto"] == "Apto"]
+
+    tabla_html = dataSet.to_html(classes="table table-striped", index=False)
+    return render_template("postulantes.html", tabla=tabla_html)
+
+@app.route("/limpiar_postulantes", methods=["POST"])
+def limpiar_postulantes():
+    entrenamientoActualizado_path = get_path("candidatosLocales.csv")
+    # Cargar encabezados del archivo actual, o definilos manualmente si están fijos
+    columnas = ["Nombre", "Apellido", "Educacion", "Experiencia", "Habilidades", "Tecnologías", "Apto"]
+    pd.DataFrame(columns=columnas).to_csv(entrenamientoActualizado_path, index=False)
+    return redirect(url_for("postulantes"))
+
+
+@app.route("/predecir_postulantes", methods=["POST"])
+def predecir_postulantes():
+    try:
+        # Cargar el archivo existente
+        entrenamientoActualizado_path = get_path("candidatosLocales.csv")
+        dataSet = pd.read_csv(entrenamientoActualizado_path)
+
+        # Cargar los encoders y el modelo
+        encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
+        encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
+        encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
+        modelo = joblib.load(get_path("modelo_candidatos.pkl"))
+
+        # Verificar columnas necesarias
+        columnas_requeridas = ["Experiencia", "Educacion", "Tecnologías", "Habilidades"]
+        for columna in columnas_requeridas:
+            if columna not in dataSet.columns:
+                return f"Falta la columna requerida: {columna}"
+
+        dataSetCopia = dataSet.copy()
+
+        # Transformar usando encoders
+        try:
+            dataSet["Educacion"] = encoder_educacion.transform(dataSet["Educacion"])
+            dataSet["Habilidades"] = encoder_habilidades.transform(dataSet["Habilidades"])
+            dataSet["Tecnologías"] = encoder_tecnologias.transform(dataSet["Tecnologías"])
+        except ValueError as e:
+            return f"Error en las transformaciones: {e}"
+
+        # Predicción
+        X = dataSet[["Experiencia", "Educacion", "Tecnologías", "Habilidades"]]
+        predicciones = modelo.predict(X)
+
+        # Guardar las predicciones en la copia
+        dataSetCopia["Apto"] = ["Apto" if pred == 1 else "No Apto" for pred in predicciones]
+
+        # Reordenar para dejar "Apto" al final
+        columnasOrdenadas = [col for col in dataSetCopia.columns if col != "Apto"] + ["Apto"]
+        dataSetCopia = dataSetCopia[columnasOrdenadas]
+
+        # Guardar el DataFrame actualizado
+        dataSetCopia.to_csv(entrenamientoActualizado_path, index=False)
+
+        return redirect(url_for("postulantes"))
+
+    except Exception as e:
+        return f"Ocurrió un error al predecir sobre los postulantes: {e}"
+
 # Ruta para crear un nuevo archivo CSV
 @app.route("/actualizar_modelo", methods=["GET", "POST"])
 def actualizar_modelo():
@@ -316,6 +504,7 @@ def actualizar_modelo():
     return render_template("actualizar_modelo.html")
 
 
+
 @app.route("/crear", methods=["GET", "POST"])
 def crear_csv():
     # Inicializar valores dinámicos para los inputs select
@@ -336,6 +525,9 @@ def crear_csv():
         # Obtener datos del formulario
         nombre = request.form["nombre"]
         apellido = request.form["apellido"]
+        email = request.form["email"]
+        telefono = request.form["telefono"]
+        ubicacion = request.form["ubicacion"]
         experiencia = int(request.form["experiencia"])
         educacion = request.form["educacion"]
         tecnologias = request.form["tecnologias"]
@@ -345,6 +537,9 @@ def crear_csv():
         nuevo_candidato = {
             "Nombre": nombre,
             "Apellido": apellido,
+            "Correo electrónico": email,
+            "Teléfono": telefono,
+            "Ubicación": ubicacion,
             "Experiencia": experiencia,
             "Educacion": educacion,
             "Tecnologías": tecnologias,
@@ -395,7 +590,7 @@ def guardar_csv():
     dataSet = pd.DataFrame(candidatos)
 
     # Reordenar las columnas en el orden deseado
-    columnasOrdenadas = ["Nombre", "Apellido", "Experiencia", "Educacion", "Tecnologías", "Habilidades", "Apto"]
+    columnasOrdenadas = ["Nombre", "Apellido", "Correo electrónico", "Teléfono", "Ubicación", "Experiencia", "Educacion", "Tecnologías", "Habilidades", "Apto"]
     dataSet = dataSet[columnasOrdenadas]
 
     # Guardar el archivo CSV con el orden adecuado

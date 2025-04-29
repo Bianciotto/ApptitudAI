@@ -16,7 +16,7 @@
     
     <div class="nav">
         <a href="{{ url_for('crear_csv') }}">Crear CSV</a>
-        <a href="{{ url_for('actualizar_modelo') }}">Actualizar Modelo</a>
+        <a href="{{ url_for('postulantes') }}">Ver Postulantes</a>
     </div>
 </header>
 
@@ -33,7 +33,7 @@
         <p id="nombre-archivo"></p>
         <button class="Highbutton" type="submit">Predecir</button>
     </form>
-    
+
     <form action="/estadisticas" method="get" style=" box-shadow: 0 4px 10px rgb(73, 194, 250); border-radius: 34px; background: rgba(24, 24, 24, 0.76);">
         <button style="background-color:#0078A0;"  type="submit" >Estadísticas</button>
     </form>
@@ -46,6 +46,9 @@
                 <tr>
                     <th>Nombre</th>
                     <th>Apellido</th>
+                    <th>Correo electrónico</th>
+                    <th>Teléfono</th>
+                    <th>Ubicación</th>
                     <th>Experiencia</th>
                     <th>Educación</th>
                     <th>Tecnologías</th>
@@ -56,6 +59,9 @@
                 <tr>
                     <td>Juan</td>
                     <td>Pérez</td>
+                    <td>perezjuan@gmail.com</td>
+                    <td>1143215678</td>
+                    <td>Buenos Aires</td>
                     <td>5 años</td>
                     <td>Universitario</td>
                     <td>Python</td>
@@ -78,6 +84,7 @@
         <div class="footer-description">
             <p>
                 Abal, Fernando Gabriel<br>
+                Ábalos, Lucas Gabriel<br>
                 Bianciotto, Matías Felipe<br>
                 Gutiérrez, Diego Germán<br>
                 Roldan, Guadalupe <br>
