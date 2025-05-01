@@ -1,8 +1,1 @@
-Nombre,Apellido,Correo electrónico,Teléfono,Ubicación,Experiencia,Educacion,Tecnologías,Habilidades,Apto
-Diego,Gutierrez,dieguti94@hotmail.com,1169583146,bsas,4,Postgrado,C++,Adaptabilidad,No Apto
-Diego,Gutierrez,dieguti94@hotmail.com,1169583146,asdsa,3,Postgrado,C++,Adaptabilidad,No Apto
-fanDeOrga,asd,dieguti94@gmail.com,1169583146,misiones,3,Secundario,Python,Comunicación efectiva,No Apto
-fer,eeee,asdasd,15456,sant fe,3,Secundario,SQL,Resolución de problemas,No Apto
-paquito,elchamaquito,fernandoabal101296@gmail.com,1166684418,polvo,1,Secundario,SQL,Empatía,No Apto
-Carlitos,Tevez,tevez@asdas,1516566,bsas,11,Universitario,Python,Resolución de problemas,Apto
-asd,asd,asd,asd,Buenos Aires,3,Postgrado,C++,Adaptabilidad,
+Nombre,Apellido,Educacion,Experiencia,Habilidades,Tecnologías,Apto

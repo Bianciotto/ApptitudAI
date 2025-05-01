@@ -16,7 +16,7 @@
 
 <body>
     <h1>Completa los datos de tu CV</h1>
-    <form method="post" action="/postulacion">
+    <form method="post" action="/crear">
         <label for="nombre">Nombre</label>
         <input type="text" name="nombre" id="nombre" required>
         
@@ -24,39 +24,13 @@
         <input type="text" name="apellido" id="apellido" required>
 
         <label for="email">Correo eléctronico</label>
-        <input type="email" name="email" id="email" required>
+        <input type="text" name="email" id="email" required>
 
         <label for="telefono">Teléfono</label>
-        <input type="text" name="telefono" pattern="\d{8,10}" maxlength="10" title="Debe tener entre 8 y 10 números" required>
+        <input type="text" name="telefono" id="telefono" required>
 
         <label for="ubicacion">Ubicación</label>
-        <select name="ubicacion" id="ubicacion" required>
-            <option value="">Seleccione una provincia</option>
-            <option value="Buenos Aires">Buenos Aires</option>
-            <option value="CABA">Ciudad Autónoma de Buenos Aires</option>
-            <option value="Catamarca">Catamarca</option>
-            <option value="Chaco">Chaco</option>
-            <option value="Chubut">Chubut</option>
-            <option value="Córdoba">Córdoba</option>
-            <option value="Corrientes">Corrientes</option>
-            <option value="Entre Ríos">Entre Ríos</option>
-            <option value="Formosa">Formosa</option>
-            <option value="Jujuy">Jujuy</option>
-            <option value="La Pampa">La Pampa</option>
-            <option value="La Rioja">La Rioja</option>
-            <option value="Mendoza">Mendoza</option>
-            <option value="Misiones">Misiones</option>
-            <option value="Neuquén">Neuquén</option>
-            <option value="Río Negro">Río Negro</option>
-            <option value="Salta">Salta</option>
-            <option value="San Juan">San Juan</option>
-            <option value="San Luis">San Luis</option>
-            <option value="Santa Cruz">Santa Cruz</option>
-            <option value="Santa Fe">Santa Fe</option>
-            <option value="Santiago del Estero">Santiago del Estero</option>
-            <option value="Tierra del Fuego">Tierra del Fuego</option>
-            <option value="Tucumán">Tucumán</option>
-        </select>
+        <input type="text" name="ubicacion" id="ubicacion" required>
         
         <label for="experiencia">Experiencia (en años)</label>
         <input type="number" min="0" max="15" name="experiencia" id="experiencia" required>
@@ -82,7 +56,7 @@
             {% endfor %}
         </select>
         
-        <button type="submit">Enviar CV</button>
+        <button type="submit">Agregar Candidato</button>
     </form>
 
 </body>

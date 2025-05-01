@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultados de Predicción</title>
+    <title>Postulantes Predicción</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='StylesIndex.css') }}">
 </head>
 <body>
@@ -12,27 +12,30 @@
             <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Logo">
         </div>
         <div class="nav">
-            <a href="{{ url_for('predecir') }}">Predecir</a>
+            <a href="{{ url_for('predecir') }}">Inicio</a>
         </div>
     </header>
     
-    <h1>Resultados de Predicción</h1>
+    <h1>Postulados en la Web</h1>
     <div class="tabla-container">
         {{ tabla|safe }}
     </div>
     <div class="acciones">
-        <form method="post" action="{{ url_for('limpiar_postulantes') }}" style="display:inline;">
-            <button type="submit">Limpiar</button>
+        <form method="get" action="{{ url_for('postulantes') }}" style="display:inline;">
+            <button type="submit">Actualizar</button>
         </form>
         <form method="post" action="{{ url_for('predecir_postulantes') }}" style="display:inline;">
             <button type="submit">Predecir</button>
         </form>
-        <form method="get" action="{{ url_for('postulantes') }}">
+        <form method="get" action="{{ url_for('postulantes') }}" style="display:inline;">
             <input type="hidden" name="filtro" value="apto">
             <button type="submit">Ver solo Aptos</button>
         </form>
-        <form method="get" action="{{ url_for('postulantes') }}">
+        <form method="get" action="{{ url_for('postulantes') }}" style="display:inline;">
             <button type="submit">Ver todos</button>
+        </form>
+        <form method="post" action="{{ url_for('limpiar_postulantes') }}" style="display:inline;">
+            <button type="submit">Limpiar</button>
         </form>
     </div>
 

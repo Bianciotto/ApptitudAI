@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, send_file, session, url_for
+from flask import Flask, redirect, render_template, request, send_file, session, url_for, flash
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
@@ -13,7 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 import io
 import base64
 from werkzeug.security import generate_password_hash, check_password_hash
-
+import re
 
 app = Flask(__name__)
 app.secret_key = "MiraQueSéQueMeVes"  # Necesario para sesiones
@@ -25,15 +25,17 @@ print("Base de datos utilizada:", app.config['SQLALCHEMY_DATABASE_URI'])
 
 
 class Candidato(db.Model):
-    id = db.Column(db.String, primary_key=True)
+    id = db.Column(db.String, primary_key=True)  # Usamos el correo como ID único
     nombre = db.Column(db.String(100), nullable=False)
+    apellido = db.Column(db.String(100), nullable=False)  # Nuevo campo
     mail = db.Column(db.String(100), nullable=False, unique=True)
+    telefono = db.Column(db.String(50), nullable=False)  # Nuevo campo
     ubicacion = db.Column(db.String(100), nullable=False)
     experiencia = db.Column(db.Integer, nullable=False)
     idedu = db.Column(db.Integer, db.ForeignKey('educacion.idedu'))
     idtec = db.Column(db.Integer, db.ForeignKey('tecnologia.idtec'))
     idhab = db.Column(db.Integer, db.ForeignKey('habilidad.idhab'))
-    aptitud = db.Column(db.Boolean, nullable=False)
+    aptitud = db.Column(db.Boolean, nullable=True)
 
 class Educacion(db.Model):
     __tablename__ = 'educacion'
@@ -59,27 +61,7 @@ class Usuario(db.Model):
     username = db.Column(db.String(100), nullable=False, unique=True)
     password = db.Column(db.String(100), nullable=False)
     type = db.Column(db.String(50), nullable=False)
-
-# Crear la base de datos y agregar usuarios ficticios si no existen
-#if not os.path.exists("erp_rrhh.db"):
-    #with app.app_context():
-        #db.create_all()
-        # Agregar usuarios ficticios
-        #usuario_admin = Usuario(username="Fernando", password=generate_password_hash("admin123", method="pbkdf2:sha256"), type="Admin_RRHH")
-        #usuario_supervisor = Usuario(username="Diego", password=generate_password_hash("supervisor123", method="pbkdf2:sha256"), type="Supervisor")
-        #usuario_analista = Usuario(username="Guada", password=generate_password_hash("analista123", method="pbkdf2:sha256"), type="Analista_Datos")
-        
-        #db.session.add(usuario_admin)
-        #db.session.add(usuario_supervisor)
-        #db.session.add(usuario_analista)
-        #db.session.commit()
-        #print("Usuarios ficticios creados con éxito.")
-
-
-def abrir_navegador():
-    webbrowser.open("http://127.0.0.1:5000/")  # URL de Flask
-
-# 🔹 Obtener la ruta correcta dentro del ejecutable
+    
 def get_path(relative_path):
     """Obtiene la ruta absoluta, considerando si se ejecuta como .exe"""
     if getattr(sys, 'frozen', False):
@@ -90,6 +72,65 @@ def get_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
+
+
+"""
+# Crear la base de datos y agregar usuarios ficticios si no existen
+if not os.path.exists("erp_rrhh.db"):
+    with app.app_context():
+        db.create_all()
+        # Agregar usuarios ficticios
+        # Cargar los encoders
+        encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
+        encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
+        encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
+
+        # Insertar las clases en la tabla de 'Educacion'
+        for idx, clase in enumerate(encoder_educacion.classes_):
+            nueva_educacion = Educacion(
+                idedu=idx,  # El índice asignado por el encoder será el ID
+                nombre=clase,
+                importancia=0  # Ajustar según tu lógica
+            )
+            db.session.merge(nueva_educacion)  # Merge para evitar duplicados
+
+        # Insertar las clases en la tabla de 'Tecnologia'
+        for idx, clase in enumerate(encoder_tecnologias.classes_):
+            nueva_tecnologia = Tecnologia(
+                idtec=idx,
+                nombre=clase,
+                importancia=0  # Ajustar según tu lógica
+            )
+            db.session.merge(nueva_tecnologia)
+
+        # Insertar las clases en la tabla de 'Habilidad'
+        for idx, clase in enumerate(encoder_habilidades.classes_):
+            nueva_habilidad = Habilidad(
+                idhab=idx,
+                nombre=clase,
+                importancia=0  # Ajustar según tu lógica
+            )
+            db.session.merge(nueva_habilidad)
+
+        # Confirmar los cambios
+        db.session.commit()
+        print("Clases cargadas automáticamente en la base de datos.")
+        usuario_admin = Usuario(username="Fernando", password=generate_password_hash("admin123", method="pbkdf2:sha256"), type="Admin_RRHH")
+        usuario_supervisor = Usuario(username="Diego", password=generate_password_hash("supervisor123", method="pbkdf2:sha256"), type="Supervisor")
+        usuario_analista = Usuario(username="Guada", password=generate_password_hash("analista123", method="pbkdf2:sha256"), type="Analista_Datos")
+        
+        db.session.add(usuario_admin)
+        db.session.add(usuario_supervisor)
+        db.session.add(usuario_analista)
+        db.session.commit()
+        print("Usuarios ficticios creados con éxito.")
+"""
+
+def abrir_navegador():
+    webbrowser.open("http://127.0.0.1:5000/")  # URL de Flask
+
+# 🔹 Obtener la ruta correcta dentro del ejecutable
+
 
 # 🔹 Cargar el modelo correctamente
 modelo_path = get_path("modelo_candidatos.pkl")
@@ -106,6 +147,8 @@ except Exception as e:
     print("Error al cargar los encoders:", e)
     raise e
 
+
+
 # Página principal
 
 @app.route('/')
@@ -118,6 +161,8 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = Usuario.query.filter_by(username=username).first()
+        
+        print("Ruta absoluta de la base de datos:", os.path.abspath("erp_rrhh.db"))
         
         if user and check_password_hash(user.password, password):
             session['username'] = user.username
@@ -344,83 +389,7 @@ def predecir():
     
     return render_template("predecir.html")
 
-
-
-
-@app.route("/postulantes")
-def postulantes():
-    entrenamientoActualizado_path = get_path("candidatosLocales.csv")
-    dataSet = pd.read_csv(entrenamientoActualizado_path)
-
-    # Reemplazar NaN en la columna 'Apto' por 'No revisado'
-    if "Apto" in dataSet.columns:
-        dataSet["Apto"] = dataSet["Apto"].fillna("No revisado")
-
-    # Filtro si viene por parámetro
-    filtro = request.args.get("filtro")
-    if filtro == "apto":
-        dataSet = dataSet[dataSet["Apto"] == "Apto"]
-
-    tabla_html = dataSet.to_html(classes="table table-striped", index=False)
-    return render_template("postulantes.html", tabla=tabla_html)
-
-@app.route("/limpiar_postulantes", methods=["POST"])
-def limpiar_postulantes():
-    entrenamientoActualizado_path = get_path("candidatosLocales.csv")
-    # Cargar encabezados del archivo actual, o definilos manualmente si están fijos
-    columnas = ["Nombre", "Apellido", "Educacion", "Experiencia", "Habilidades", "Tecnologías", "Apto"]
-    pd.DataFrame(columns=columnas).to_csv(entrenamientoActualizado_path, index=False)
-    return redirect(url_for("postulantes"))
-
-
-@app.route("/predecir_postulantes", methods=["POST"])
-def predecir_postulantes():
-    try:
-        # Cargar el archivo existente
-        entrenamientoActualizado_path = get_path("candidatosLocales.csv")
-        dataSet = pd.read_csv(entrenamientoActualizado_path)
-
-        # Cargar los encoders y el modelo
-        encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
-        encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
-        encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
-        modelo = joblib.load(get_path("modelo_candidatos.pkl"))
-
-        # Verificar columnas necesarias
-        columnas_requeridas = ["Experiencia", "Educacion", "Tecnologías", "Habilidades"]
-        for columna in columnas_requeridas:
-            if columna not in dataSet.columns:
-                return f"Falta la columna requerida: {columna}"
-
-        dataSetCopia = dataSet.copy()
-
-        # Transformar usando encoders
-        try:
-            dataSet["Educacion"] = encoder_educacion.transform(dataSet["Educacion"])
-            dataSet["Habilidades"] = encoder_habilidades.transform(dataSet["Habilidades"])
-            dataSet["Tecnologías"] = encoder_tecnologias.transform(dataSet["Tecnologías"])
-        except ValueError as e:
-            return f"Error en las transformaciones: {e}"
-
-        # Predicción
-        X = dataSet[["Experiencia", "Educacion", "Tecnologías", "Habilidades"]]
-        predicciones = modelo.predict(X)
-
-        # Guardar las predicciones en la copia
-        dataSetCopia["Apto"] = ["Apto" if pred == 1 else "No Apto" for pred in predicciones]
-
-        # Reordenar para dejar "Apto" al final
-        columnasOrdenadas = [col for col in dataSetCopia.columns if col != "Apto"] + ["Apto"]
-        dataSetCopia = dataSetCopia[columnasOrdenadas]
-
-        # Guardar el DataFrame actualizado
-        dataSetCopia.to_csv(entrenamientoActualizado_path, index=False)
-
-        return redirect(url_for("postulantes"))
-
-    except Exception as e:
-        return f"Ocurrió un error al predecir sobre los postulantes: {e}"
-
+    
 # Ruta para crear un nuevo archivo CSV
 @app.route("/actualizar_modelo", methods=["GET", "POST"])
 def actualizar_modelo():
@@ -503,6 +472,122 @@ def actualizar_modelo():
 
     return render_template("actualizar_modelo.html")
 
+@app.route("/postulantes")
+def postulantes():
+    candidatos = Candidato.query.all()
+    
+    
+    # Verificar si hay candidatos
+    if not candidatos:  # Si la lista está vacía
+        return render_template("postulantes.html", mensaje="No hay candidatos disponibles.")
+
+    dataSet = pd.DataFrame([{
+        "Nombre": c.nombre,
+        "Apellido": c.apellido,
+        "Email": c.id,
+        "Telefono": c.telefono,
+        "Ubicacion": c.ubicacion,
+        "Experiencia": c.experiencia,
+        "Educacion": c.idedu,
+        "Tecnologías": c.idtec,
+        "Habilidades": c.idhab,
+        "Apto": "Apto" if c.aptitud is True else ("No apto" if c.aptitud is False else "Sin revisar")
+    } for c in candidatos])
+    
+    educacion_map = {edu.idedu: edu.nombre for edu in Educacion.query.all()}
+    Tecnologia_map = {tec.idtec: tec.nombre for tec in Tecnologia.query.all()}
+    habilidad_map = {hab.idhab: hab.nombre for hab in Habilidad.query.all()}
+
+    # Reemplazar los valores de 'Educacion' en el DataFrame con sus nombres
+    dataSet["Educacion"] = dataSet["Educacion"].map(educacion_map)
+    dataSet["Tecnologías"] = dataSet["Tecnologías"].map(Tecnologia_map)
+    dataSet["Habilidades"] = dataSet["Habilidades"].map(habilidad_map)
+
+    # Filtro por parámetro
+    filtro = request.args.get("filtro")
+    if filtro == "apto":
+        dataSet = dataSet[dataSet["Apto"] == "Apto"]
+
+    tabla_html = dataSet.to_html(classes="table table-striped", index=False)
+    return render_template("postulantes.html", tabla=tabla_html)
+
+    
+@app.route("/limpiar_postulantes", methods=["POST"])
+def limpiar_postulantes():
+    try:
+        # Eliminar todos los registros de la tabla "Candidato"
+        db.session.query(Candidato).delete()
+        db.session.commit()  # Confirmar los cambios en la base de datos
+
+        # También puedes actualizar o limpiar el archivo CSV
+        entrenamientoActualizado_path = get_path("candidatosLocales.csv")
+        columnas = ["Nombre", "Apellido", "Educacion", "Experiencia", "Habilidades", "Tecnologías", "Apto"]
+        pd.DataFrame(columns=columnas).to_csv(entrenamientoActualizado_path, index=False)
+
+        return redirect(url_for("postulantes"))
+    except Exception as e:
+        return f"Ocurrió un error al limpiar los postulantes: {e}"
+
+@app.route("/predecir_postulantes", methods=["POST"])
+def predecir_postulantes():
+    try:
+        # Cargar los candidatos existentes
+        candidatos = Candidato.query.all()
+
+        # Crear un DataFrame con los datos de los candidatos
+        dataSet = pd.DataFrame([{
+            "Nombre": c.nombre,
+            "Apellido": c.apellido,
+            "Email": c.id,
+            "Telefono": c.telefono,
+            "Ubicacion": c.ubicacion,
+            "Experiencia": c.experiencia,
+            "Educacion": c.idedu,
+            "Tecnologías": c.idtec,
+            "Habilidades": c.idhab,
+            "Apto": c.aptitud if c.aptitud else "sin revisar"
+        } for c in candidatos])
+
+        # Cargar el modelo entrenado
+        modelo = joblib.load(get_path("modelo_candidatos.pkl"))
+
+        # Verificar que las columnas necesarias estén presentes
+        columnas_requeridas = ["Experiencia", "Educacion", "Tecnologías", "Habilidades"]
+        for columna in columnas_requeridas:
+            if columna not in dataSet.columns:
+                return f"Falta la columna requerida: {columna}"
+
+        # Realizar predicciones
+        X = dataSet[["Experiencia", "Educacion", "Tecnologías", "Habilidades"]]
+        predicciones = modelo.predict(X)
+
+        # Guardar las predicciones en la base de datos
+        for i, candidato in enumerate(candidatos):
+            candidato.aptitud = predicciones[i] == 1  # True si es "Apto", False en caso contrario
+            db.session.add(candidato)
+
+        db.session.commit()  # Confirmar los cambios en la base de datos
+
+        # Mapear valores a nombres descriptivos para visualización
+        educacion_map = {edu.idedu: edu.nombre for edu in Educacion.query.all()}
+        Tecnologia_map = {tec.idtec: tec.nombre for tec in Tecnologia.query.all()}
+        habilidad_map = {hab.idhab: hab.nombre for hab in Habilidad.query.all()}
+
+        dataSet["Educacion"] = dataSet["Educacion"].map(educacion_map)
+        dataSet["Tecnologías"] = dataSet["Tecnologías"].map(Tecnologia_map)
+        dataSet["Habilidades"] = dataSet["Habilidades"].map(habilidad_map)
+
+        # Actualizar el DataFrame con las predicciones
+        dataSet["Apto"] = ["Apto" if pred == 1 else "No Apto" for pred in predicciones]
+        columnasOrdenadas = [col for col in dataSet.columns if col != "Apto"] + ["Apto"]
+        dataSet = dataSet[columnasOrdenadas]
+
+        # Generar tabla HTML para mostrar en la página
+        tabla_html = dataSet.to_html(classes="table table-striped", index=False)
+        return render_template("postulantes.html", tabla=tabla_html)
+
+    except Exception as e:
+        return f"Ocurrió un error al predecir sobre los postulantes: {e}"
 
 
 @app.route("/crear", methods=["GET", "POST"])
@@ -526,8 +611,24 @@ def crear_csv():
         nombre = request.form["nombre"]
         apellido = request.form["apellido"]
         email = request.form["email"]
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_regex, email):
+            flash("Correo electrónico inválido. Por favor ingresa un email válido.")
+            return redirect("/postulacion")
         telefono = request.form["telefono"]
+        if not telefono.isdigit() or len(telefono) < 8 or len(telefono) > 10:
+            flash("El teléfono debe contener solo números y tener entre 8 y 10 cifras.")
+            return redirect("/postulacion")
         ubicacion = request.form["ubicacion"]
+        PROVINCIAS_ARG = [
+        "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
+        "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
+        "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
+        "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
+        "Tierra del Fuego", "Tucumán"]
+        if ubicacion not in PROVINCIAS_ARG:
+            flash("Ubicación no válida. Selecciona una provincia de Argentina.")
+            return redirect("/postulacion")
         experiencia = int(request.form["experiencia"])
         educacion = request.form["educacion"]
         tecnologias = request.form["tecnologias"]
@@ -537,9 +638,6 @@ def crear_csv():
         nuevo_candidato = {
             "Nombre": nombre,
             "Apellido": apellido,
-            "Correo electrónico": email,
-            "Teléfono": telefono,
-            "Ubicación": ubicacion,
             "Experiencia": experiencia,
             "Educacion": educacion,
             "Tecnologías": tecnologias,
@@ -590,7 +688,7 @@ def guardar_csv():
     dataSet = pd.DataFrame(candidatos)
 
     # Reordenar las columnas en el orden deseado
-    columnasOrdenadas = ["Nombre", "Apellido", "Correo electrónico", "Teléfono", "Ubicación", "Experiencia", "Educacion", "Tecnologías", "Habilidades", "Apto"]
+    columnasOrdenadas = ["Nombre", "Apellido", "Experiencia", "Educacion", "Tecnologías", "Habilidades", "Apto"]
     dataSet = dataSet[columnasOrdenadas]
 
     # Guardar el archivo CSV con el orden adecuado

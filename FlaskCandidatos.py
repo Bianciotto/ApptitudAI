@@ -1,24 +1,23 @@
-import re
-from flask import Flask, flash, redirect, render_template, request, send_file, session, url_for
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
-from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
-import webbrowser
-import numpy as np
+from flask import Flask, redirect, render_template, request, session, url_for, flash
 import threading
 import joblib
 import os
+from FlaskLocal import db, Candidato, Educacion, Tecnologia, Habilidad  # Importamos los modelos
 import sys
-import matplotlib.pyplot as plt
-import io
-import base64
-
+import webbrowser
+import re
 
 app = Flask(__name__)
 app.secret_key = "MiraQueSéQueMeVes"  # Necesario para sesiones
 
+# Configura la URI de la base de datos aquí
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///erp_rrhh.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db.init_app(app)  # Vincula db con la instancia actual de Flask
+
 def abrir_navegador():
-    webbrowser.open("http://127.0.0.1:5000/")  # URL de Flask
+    webbrowser.open("http://127.0.0.1:5001/")  # URL de Flask
 
 # 🔹 Obtener la ruta correcta dentro del ejecutable
 def get_path(relative_path):
@@ -32,84 +31,40 @@ def get_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-# 🔹 Cargar el modelo correctamente
-modelo_path = get_path("modelo_candidatos.pkl")
-modelo = joblib.load(modelo_path)
-
-
-try:
-    encoder_educacion = joblib.load("encoder_educacion.pkl")
-    encoder_habilidades = joblib.load("encoder_habilidades.pkl")
-    encoder_tecnologias = joblib.load("encoder_tecnologias.pkl")
-    
-except FileNotFoundError as e:
-    print("Error: No se pudo cargar el archivo del encoder.", e)
-    raise e
-except Exception as e:
-    print("Error al cargar los encoders:", e)
-    raise e
-
-
 # Página principal
 @app.route("/")
 def home():
+    # Las opciones ya están en la base de datos, no necesitamos encoders aquí
+    opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
+    opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
+    opciones_habilidades = [habilidad.nombre for habilidad in Habilidad.query.all()]
 
-    encoder_educacion_path = get_path("encoder_educacion.pkl")
-    encoder_habilidades_path = get_path("encoder_habilidades.pkl")
-    encoder_tecnologias_path = get_path("encoder_tecnologias.pkl")
-
-    encoder_educacion = joblib.load(encoder_educacion_path)
-    session["opciones_educacion"] = list(encoder_educacion.classes_)
-    encoder_habilidades = joblib.load(encoder_habilidades_path)
-    session["opciones_habilidades"] = list(encoder_habilidades.classes_)
-    encoder_tecnologias = joblib.load(encoder_tecnologias_path)
-    session["opciones_tecnologias"] = list(encoder_tecnologias.classes_)
+    session["opciones_educacion"] = opciones_educacion
+    session["opciones_tecnologias"] = opciones_tecnologias
+    session["opciones_habilidades"] = opciones_habilidades
 
     return render_template(
         "postulacion.html",
         opciones_educacion=session["opciones_educacion"],
-        opciones_habilidades=session["opciones_habilidades"],
-        opciones_tecnologias=session["opciones_tecnologias"]
+        opciones_tecnologias=session["opciones_tecnologias"],
+        opciones_habilidades=session["opciones_habilidades"]
     )
 
-    
 @app.route("/postulacion", methods=["GET", "POST"])
-def postulacion():
-    # Inicializar valores dinámicos para los inputs select
-    encoder_educacion_path = get_path("encoder_educacion.pkl")
-    encoder_habilidades_path = get_path("encoder_habilidades.pkl")
-    encoder_tecnologias_path = get_path("encoder_tecnologias.pkl")
-    encoder_educacion = joblib.load(encoder_educacion_path)
-    session["opciones_educacion"] = list(encoder_educacion.classes_)
-    encoder_habilidades = joblib.load(encoder_habilidades_path)
-    session["opciones_habilidades"] = list(encoder_habilidades.classes_)
-    encoder_tecnologias = joblib.load(encoder_tecnologias_path)
-    session["opciones_tecnologias"] = list(encoder_tecnologias.classes_)
-    
-    candidatosLocales_path = get_path("candidatosLocales.csv")
-    dataSet = pd.read_csv(candidatosLocales_path)
-    
-    if "candidatos" not in session:
-        session["candidatos"] = []
-
+def crear_csv():
     if request.method == "POST":
         # Obtener datos del formulario
         nombre = request.form["nombre"]
-
-        apellido = request.form["apellido"]
-
+        apellido = request.form["apellido"]  # Nuevo campo
         email = request.form["email"]
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, email):
             flash("Correo electrónico inválido. Por favor ingresa un email válido.")
             return redirect("/postulacion")
-        
         telefono = request.form["telefono"]
-        # Validación fuerte: solo números, y cantidad entre 8 y 10
         if not telefono.isdigit() or len(telefono) < 8 or len(telefono) > 10:
             flash("El teléfono debe contener solo números y tener entre 8 y 10 cifras.")
             return redirect("/postulacion")
-        
         ubicacion = request.form["ubicacion"]
         PROVINCIAS_ARG = [
         "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
@@ -120,49 +75,58 @@ def postulacion():
         if ubicacion not in PROVINCIAS_ARG:
             flash("Ubicación no válida. Selecciona una provincia de Argentina.")
             return redirect("/postulacion")
-        
         experiencia = int(request.form["experiencia"])
-        
         educacion = request.form["educacion"]
-        
         tecnologias = request.form["tecnologias"]
-        
         habilidades = request.form["habilidades"]
 
-        # Crear un nuevo candidato como un diccionario
-        nuevo_candidato = {
-            "Nombre": nombre,
-            "Apellido": apellido,
-            "Correo electrónico": email,
-            "Teléfono": telefono,
-            "Ubicación": ubicacion,
-            "Experiencia": experiencia,
-            "Educacion": educacion,
-            "Tecnologías": tecnologias,
-            "Habilidades": habilidades,
-            "Apto": ""  # La columna Apto se evaluará después
-        }
+        try:
+            # Buscar el ID correspondiente en las tablas
+            educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
+            tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
+            habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
 
-        # Convertir el diccionario a un DataFrame de una sola fila
-        nuevo_df = pd.DataFrame([nuevo_candidato])
+            if not educacion_obj or not tecnologia_obj or not habilidad_obj:
+                return "Error: Valores inválidos seleccionados.", 400
 
-        # Agregar al dataset existente
-        dataSet = pd.concat([dataSet, nuevo_df], ignore_index=True)
+            idedu = educacion_obj.idedu
+            idtec = tecnologia_obj.idtec
+            idhab = habilidad_obj.idhab
 
-        # Guardar cambios en el archivo CSV
-        dataSet.to_csv(candidatosLocales_path, index=False)
+            # Crear y guardar el candidato
+            nuevo_candidato_db = Candidato(
+                id=email,
+                nombre=nombre,
+                apellido=apellido,  # Nuevo campo
+                mail=email,
+                telefono=telefono,  # Nuevo campo
+                ubicacion=ubicacion,
+                experiencia=experiencia,
+                idedu=idedu,
+                idtec=idtec,
+                idhab=idhab,
+                aptitud=None
+            )
+            db.session.add(nuevo_candidato_db)
+            db.session.commit()
+            print(f"Candidato {nombre} guardado correctamente en la base de datos.")
+        except Exception as e:
+            print(f"Error al guardar el candidato: {e}")
+            return "Error al guardar el candidato.", 500
 
-        #redirect a una pagina que muestre mi cv cargado o solo un cartelito que diga cargado exitosamente
+        return redirect("/")
 
-    # Renderizar la página HTML con los candidatos actuales
     return render_template(
         "postulacion.html",
-        candidatos=session["candidatos"],
         opciones_educacion=session["opciones_educacion"],
-        opciones_habilidades=session["opciones_habilidades"],
-        opciones_tecnologias=session["opciones_tecnologias"]
+        opciones_tecnologias=session["opciones_tecnologias"],
+        opciones_habilidades=session["opciones_habilidades"]
     )
 
 if __name__ == "__main__":
-    threading.Timer(1.5, abrir_navegador).start() 
-    app.run(debug=False, host="127.0.0.1", port=5000)
+    threading.Timer(1.5, abrir_navegador).start()
+    app.run(debug=False, host="127.0.0.1", port=5001)
+    
+    
+    
+    
