@@ -126,11 +126,11 @@ if not os.path.exists("erp_rrhh.db"):
         print("Usuarios ficticios creados con éxito.")
 """
 
+
 def abrir_navegador():
     webbrowser.open("http://127.0.0.1:5000/")  # URL de Flask
 
 # 🔹 Obtener la ruta correcta dentro del ejecutable
-
 
 # 🔹 Cargar el modelo correctamente
 modelo_path = get_path("modelo_candidatos.pkl")
@@ -148,12 +148,11 @@ except Exception as e:
     raise e
 
 
-
 # Página principal
-
 @app.route('/')
 def index():
     return redirect('/login')
+
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
@@ -200,8 +199,6 @@ def analista():
     if 'username' in session and session.get('type') == "Analista_Datos":
         return f"Bienvenido {session.get('username')} al panel de Analista de Datos."
     return redirect('/login')
-
-
 
 
 """
@@ -265,6 +262,7 @@ def entrenar_inicio():
 
     return render_template("index.html")
 """
+
 
 # Página de estadísticas
 @app.route("/estadisticas", methods=["GET", "POST"])
@@ -472,6 +470,7 @@ def actualizar_modelo():
 
     return render_template("actualizar_modelo.html")
 
+
 @app.route("/postulantes")
 def postulantes():
     candidatos = Candidato.query.all()
@@ -526,6 +525,7 @@ def limpiar_postulantes():
         return redirect(url_for("postulantes"))
     except Exception as e:
         return f"Ocurrió un error al limpiar los postulantes: {e}"
+
 
 @app.route("/predecir_postulantes", methods=["POST"])
 def predecir_postulantes():
@@ -698,6 +698,7 @@ def guardar_csv():
     session.pop("candidatos", None)
 
     return send_file(candidatosPagina_path, as_attachment=True)
+
 
 @app.route("/etiquetas")
 def mostrar_etiquetas():

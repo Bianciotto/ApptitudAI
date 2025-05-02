@@ -2,10 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Etiquetas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='StylesCrear.css') }}">
 </head>
 <body class="container mt-4">
+    <header>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Logo">
+        </div>
+        <div class="nav">
+            <a href="{{ url_for('predecir') }}">Inicio</a>
+        </div>
+    </header>
+    
     <h1 class="mb-4">Etiquetas de Evaluación</h1>
     <h3>Educación</h3>
     {{ tabla_edu|safe }}
@@ -49,6 +59,35 @@
 
         <button type="submit" class="btn btn-primary">Guardar valores</button>
     </form>
-
 </body>
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-logo">
+            <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image">
+        </div>
+        <div class="footer-description">
+            <p>
+                Abal, Fernando Gabriel<br>
+                Ábalos, Lucas Gabriel<br>
+                Bianciotto, Matías Felipe<br>
+                Gutiérrez, Diego Germán<br>
+                Roldan, Guadalupe <br>
+                Sotelo, Evelyn Romina
+
+            </p>
+        </div>
+        <div class="footer-contacts">
+            <div class="footer-country">
+                <div class="address">
+                    <img src="{{ url_for('static', filename='images/ArgentinaS.png') }}" alt="Argentina Flag">
+                    <p>Argentina</p>
+                    <p>Buenos Aires</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>©2025 IA para la Predicción de Candidatos — Desarrollado en Python con Scikit-Learn y Árboles de Decisión</p>
+    </div>
+</footer>
 </html>
