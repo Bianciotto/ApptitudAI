@@ -1,0 +1,26 @@
+{% extends './base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block customCSS %}
+<link rel="stylesheet" href="{{ url_for('static', filename='StylesIndex.css') }}">
+{% endblock %}
+
+{% block body %}
+<form class="form-signin" action="/login" method="POST" style="max-width: 30% !important;">
+    <img class="mb-4" src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="" width="100" height="100">
+    <h1 class="h3 mb-3 fw-normal">Login</h1>
+
+    <div class="form-floating">
+        <input type="text" class="form-control" id="username" name="username" placeholder="Username" >
+        <label for="username" style="color:black !important;">Usuario</label>
+    </div>
+
+    <div class="form-floating mt-2">
+        <input type="password" class="form-control" name="password" id="password" placeholder="Password">
+        <label for="password" style="color:black !important;">Contraseña</label>
+    </div>
+
+    <button class="w-100 btn btn-lg btn-primary" type="submit">Ingresar</button>
+</form>
+{% endblock %}
