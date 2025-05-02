@@ -475,8 +475,7 @@ def actualizar_modelo():
 @app.route("/postulantes")
 def postulantes():
     candidatos = Candidato.query.all()
-    
-    
+        
     # Verificar si hay candidatos
     if not candidatos:  # Si la lista está vacía
         return render_template("postulantes.html", mensaje="No hay candidatos disponibles.")
@@ -699,6 +698,59 @@ def guardar_csv():
     session.pop("candidatos", None)
 
     return send_file(candidatosPagina_path, as_attachment=True)
+
+@app.route("/etiquetas")
+def mostrar_etiquetas():
+    educaciones = Educacion.query.all()
+    tecnologias = Tecnologia.query.all()
+    habilidades = Habilidad.query.all()
+
+    df_edu = pd.DataFrame([{"Nombre": e.nombre, "Valor": e.importancia} for e in educaciones])
+    df_tec = pd.DataFrame([{"Nombre": t.nombre, "Valor": t.importancia} for t in tecnologias])
+    df_hab = pd.DataFrame([{"Nombre": h.nombre, "Valor": h.importancia} for h in habilidades])
+
+    tabla_edu = df_edu.to_html(classes="table table-bordered", index=False)
+    tabla_tec = df_tec.to_html(classes="table table-bordered", index=False)
+    tabla_hab = df_hab.to_html(classes="table table-bordered", index=False)
+
+    return render_template("etiquetas.html",
+                           tabla_edu=tabla_edu,
+                           tabla_tec=tabla_tec,
+                           tabla_hab=tabla_hab,
+                           educaciones=educaciones,
+                           habilidades=habilidades,
+                           tecnologias=tecnologias)
+
+
+@app.route("/asignar_valores", methods=["POST"])
+def asignar_valores():
+    # Educación
+    educacion_id = request.form.get("educacion_id")
+    valor_educacion = request.form.get("valor_educacion")
+    if valor_educacion != "":
+        edu = Educacion.query.get(int(educacion_id))
+        if edu:
+            edu.importancia = int(valor_educacion)
+
+    # Tecnología
+    tecnologia_id = request.form.get("tecnologia_id")
+    valor_tecnologia = request.form.get("valor_tecnologia")
+    if valor_tecnologia != "":
+        tec = Tecnologia.query.get(int(tecnologia_id))
+        if tec:
+            tec.importancia = int(valor_tecnologia)
+
+    # Habilidad
+    habilidad_id = request.form.get("habilidad_id")
+    valor_habilidad = request.form.get("valor_habilidad")
+    if valor_habilidad != "":
+        hab = Habilidad.query.get(int(habilidad_id))
+        if hab:
+            hab.importancia = int(valor_habilidad)
+
+    db.session.commit()
+    return redirect(url_for("mostrar_etiquetas"))
+
 
 if __name__ == "__main__":
     threading.Timer(1.5, abrir_navegador).start() 
