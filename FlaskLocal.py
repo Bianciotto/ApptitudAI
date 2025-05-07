@@ -27,15 +27,16 @@ print("Base de datos utilizada:", app.config['SQLALCHEMY_DATABASE_URI'])
 class Candidato(db.Model):
     id = db.Column(db.String, primary_key=True)  # Usamos el correo como ID único
     nombre = db.Column(db.String(100), nullable=False)
-    apellido = db.Column(db.String(100), nullable=False)  # Nuevo campo
+    apellido = db.Column(db.String(100), nullable=False)
     mail = db.Column(db.String(100), nullable=False, unique=True)
-    telefono = db.Column(db.String(50), nullable=False)  # Nuevo campo
+    telefono = db.Column(db.String(50), nullable=False)
     ubicacion = db.Column(db.String(100), nullable=False)
     experiencia = db.Column(db.Integer, nullable=False)
     idedu = db.Column(db.Integer, db.ForeignKey('educacion.idedu'))
     idtec = db.Column(db.Integer, db.ForeignKey('tecnologia.idtec'))
     idhab = db.Column(db.Integer, db.ForeignKey('habilidad.idhab'))
     aptitud = db.Column(db.Boolean, nullable=True)
+    puntaje = db.Column(db.Integer, nullable=False, default=0)
 
 class Educacion(db.Model):
     __tablename__ = 'educacion'
@@ -489,7 +490,8 @@ def postulantes():
         "Educacion": c.idedu,
         "Tecnologías": c.idtec,
         "Habilidades": c.idhab,
-        "Apto": "Apto" if c.aptitud is True else ("No apto" if c.aptitud is False else "Sin revisar")
+        "Apto": "Apto" if c.aptitud is True else ("No apto" if c.aptitud is False else "Sin revisar"),
+        "Puntaje": c.puntaje
     } for c in candidatos])
     
     educacion_map = {edu.idedu: edu.nombre for edu in Educacion.query.all()}
@@ -544,7 +546,8 @@ def predecir_postulantes():
             "Educacion": c.idedu,
             "Tecnologías": c.idtec,
             "Habilidades": c.idhab,
-            "Apto": c.aptitud if c.aptitud else "sin revisar"
+            "Apto": c.aptitud if c.aptitud else "sin revisar",
+            "Puntaje": c.puntaje
         } for c in candidatos])
 
         # Cargar el modelo entrenado
@@ -587,6 +590,42 @@ def predecir_postulantes():
 
     except Exception as e:
         return f"Ocurrió un error al predecir sobre los postulantes: {e}"
+    
+
+
+@app.route('/asignar_puntajes', methods=["GET", "POST"])
+def asignar_puntajes():
+    candidatos = Candidato.query.filter_by(aptitud=True).all()
+    for c in candidatos:
+        c.puntaje = calcular_puntaje(c)
+    db.session.commit()
+    flash('Puntajes asignados correctamente.', 'success')
+    return redirect(url_for('postulantes'))  # Cambiá esto según tu app
+
+
+    
+def calcular_puntaje(candidato):
+    puntaje = 0
+
+    puntaje += candidato.experiencia * 2
+
+    if candidato.idedu:
+        edu = Educacion.query.get(candidato.idedu)
+        if edu:
+            puntaje += edu.importancia * 3
+
+    if candidato.idtec:
+        tec = Tecnologia.query.get(candidato.idtec)
+        if tec:
+            puntaje += tec.importancia * 5
+
+    if candidato.idhab:
+        hab = Habilidad.query.get(candidato.idhab)
+        if hab:
+            puntaje += hab.importancia * 2
+
+    return puntaje
+
 
 
 @app.route("/crear", methods=["GET", "POST"])

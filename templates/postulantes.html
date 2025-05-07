@@ -34,9 +34,12 @@
         <form method="get" action="{{ url_for('postulantes') }}" style="display:inline;">
             <button type="submit">Ver todos</button>
         </form>
-        <form method="post" action="{{ url_for('limpiar_postulantes') }}" style="display:inline;">
-            <button type="submit">Limpiar</button>
+        <form method="get" action="{{ url_for('asignar_puntajes') }}" style="display:inline;">
+            <button type="submit">Asignar Puntajes</button>
         </form>
+        <!--<form method="post" action="{{ url_for('limpiar_postulantes') }}" style="display:inline;">
+            <button type="submit">Limpiar</button>
+        </form>-->
     </div>
 
 </body>
