@@ -55,7 +55,7 @@ def crear_csv():
     if request.method == "POST":
         # Obtener datos del formulario
         nombre = request.form["nombre"]
-        apellido = request.form["apellido"]  # Nuevo campo
+        apellido = request.form["apellido"]
         email = request.form["email"]
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, email):

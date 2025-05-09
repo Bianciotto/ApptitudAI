@@ -474,7 +474,8 @@ def actualizar_modelo():
 
 @app.route("/postulantes")
 def postulantes():
-    candidatos = Candidato.query.all()
+    candidatos = Candidato.query.order_by(Candidato.puntaje.desc()).all()
+    #candidatos = Candidato.query.all()
         
     # Verificar si hay candidatos
     if not candidatos:  # Si la lista está vacía
@@ -592,7 +593,6 @@ def predecir_postulantes():
         return f"Ocurrió un error al predecir sobre los postulantes: {e}"
     
 
-
 @app.route('/asignar_puntajes', methods=["GET", "POST"])
 def asignar_puntajes():
     candidatos = Candidato.query.filter_by(aptitud=True).all()
@@ -600,10 +600,8 @@ def asignar_puntajes():
         c.puntaje = calcular_puntaje(c)
     db.session.commit()
     flash('Puntajes asignados correctamente.', 'success')
-    return redirect(url_for('postulantes'))  # Cambiá esto según tu app
+    return redirect(url_for('postulantes'))
 
-
-    
 def calcular_puntaje(candidato):
     puntaje = 0
 
@@ -625,7 +623,6 @@ def calcular_puntaje(candidato):
             puntaje += hab.importancia * 2
 
     return puntaje
-
 
 
 @app.route("/crear", methods=["GET", "POST"])
