@@ -388,89 +388,6 @@ def predecir():
     
     return render_template("predecir.html")
 
-    
-# Ruta para crear un nuevo archivo CSV
-@app.route("/actualizar_modelo", methods=["GET", "POST"])
-def actualizar_modelo():
-    if request.method == "POST":    
-        if "nuevo_csv" not in request.files:
-            return "Por favor, sube un archivo CSV para actualizar el modelo."
-
-        file = request.files["nuevo_csv"]
-        if file.filename == "":
-            return "No seleccionaste ningún archivo."
-
-        try:
-            # Cargar modelo y encoders existentes
-            print("Cargando modelo y encoders existentes...")
-            modelo_path = get_path("modelo_candidatos.pkl")
-            modelo = joblib.load(modelo_path)
-            encoder_educacion_path = get_path("encoder_educacion.pkl")
-            encoder_habilidades_path = get_path("encoder_habilidades.pkl")
-            encoder_tecnologias_path = get_path("encoder_tecnologias.pkl")
-            encoder_educacion = joblib.load(encoder_educacion_path)
-            encoder_habilidades = joblib.load(encoder_habilidades_path)
-            encoder_tecnologias = joblib.load(encoder_tecnologias_path)
-            
-            # Cargar datasets
-            print("Cargando datasets...")
-            entrenamientoActualizado_path = get_path("entrenamientoActualizado.csv")
-            dataSet = pd.read_csv(entrenamientoActualizado_path)
-            #nuevo_df = pd.read_csv(file_path)
-            nuevo_df = pd.read_csv(file)
-
-            # Combinar datasets
-            print("Uniendo datasets...")
-            unirDataSet = pd.concat([dataSet, nuevo_df], ignore_index=True)
-            unirDataSet.drop_duplicates()
-            unirDataSetNoMapeado = unirDataSet.copy()
-
-            # Actualizar encoders dinámicamente
-            print("Actualizando encoders dinámicamente...")
-            nuevas_educaciones = set(unirDataSet["Educacion"]) - set(encoder_educacion.classes_)
-            if nuevas_educaciones:
-                encoder_educacion.classes_ = np.array(list(encoder_educacion.classes_) + list(nuevas_educaciones))
-            nuevas_habilidades = set(unirDataSet["Habilidades"]) - set(encoder_habilidades.classes_)
-            if nuevas_habilidades:
-                encoder_habilidades.classes_ = np.array(list(encoder_habilidades.classes_) + list(nuevas_habilidades))
-            nuevas_tecnologias = set(unirDataSet["Tecnologías"]) - set(encoder_tecnologias.classes_)
-            if nuevas_tecnologias:
-                encoder_tecnologias.classes_ = np.array(list(encoder_tecnologias.classes_) + list(nuevas_tecnologias))
-
-            # Transformar columnas categóricas
-            print("Transformando columnas categóricas...")
-            unirDataSet["Educacion"] = encoder_educacion.transform(unirDataSet["Educacion"])
-            unirDataSet["Habilidades"] = encoder_habilidades.transform(unirDataSet["Habilidades"])
-            unirDataSet["Tecnologías"] = encoder_tecnologias.transform(unirDataSet["Tecnologías"])
-            unirDataSet["Apto"] = unirDataSet["Apto"].map({"Apto": 1, "No Apto": 0})
-
-            # Reentrenar el modelo
-            print("Reentrenando el modelo...")
-            X = unirDataSet[["Experiencia", "Educacion", "Tecnologías", "Habilidades"]]
-            y = unirDataSet["Apto"]
-            modelo.fit(X, y)
-
-            # Guardar resultados actualizados
-            print("Guardando datos actualizados...")
-            unirDataSetNoMapeado.to_csv(entrenamientoActualizado_path, index=False)
-            modelo_path = get_path("modelo_candidatos.pkl")
-            encoder_educacion_path = get_path("encoder_educacion.pkl")
-            encoder_habilidades_path = get_path("encoder_habilidades.pkl")
-            encoder_tecnologias_path = get_path("encoder_tecnologias.pkl")
-            joblib.dump(modelo, modelo_path)
-            joblib.dump(encoder_educacion, encoder_educacion_path)
-            joblib.dump(encoder_habilidades, encoder_habilidades_path)
-            joblib.dump(encoder_tecnologias, encoder_tecnologias_path)
-
-            # Redirigir a la página de estadísticas
-            return redirect("/estadisticas")
-
-        except Exception as e:
-            print("Error:", e)
-            return f"Ocurrió un error al procesar y actualizar el modelo: {e}"
-
-    return render_template("actualizar_modelo.html")
-
 
 @app.route("/postulantes")
 def postulantes():
@@ -512,7 +429,7 @@ def postulantes():
     tabla_html = dataSet.to_html(classes="table table-striped", index=False)
     return render_template("postulantes.html", tabla=tabla_html)
 
-    
+
 @app.route("/limpiar_postulantes", methods=["POST"])
 def limpiar_postulantes():
     try:
@@ -591,7 +508,7 @@ def predecir_postulantes():
 
     except Exception as e:
         return f"Ocurrió un error al predecir sobre los postulantes: {e}"
-    
+
 
 @app.route('/asignar_puntajes', methods=["GET", "POST"])
 def asignar_puntajes():
