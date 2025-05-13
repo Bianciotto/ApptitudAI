@@ -1,6 +1,5 @@
 html,
 
-/* RESETEO EL MARCO */
 * {
   margin: 0;
   padding: 0;
@@ -8,20 +7,27 @@ html,
   font-family: "Poppins", sans-serif;
 }
 
-
 body {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(90deg, #ce0bff, #3363ff);
+  background: linear-gradient(135deg, #2d0056, #3a0ca3, #7209b7, #f72585, #ff4d6d, #fca311);
+  background-size: 400% 400%;
+  animation: gradientAnimation 10s ease infinite;
+
+}
+@keyframes gradientAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .container {
   position: relative;
   width: 850px;
   height: 550px;
-  background: #fff;
+  background: linear-gradient(135deg, #7209b7, #3a0ca3);
   border-radius: 30px;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
   overflow: hidden;
@@ -33,7 +39,7 @@ body {
   width: 850px;
   height: 100;
   background: transparent;
-  
+  color: white;
   border-radius: 30px;
   padding: 30px;
   overflow: hidden;
@@ -70,8 +76,6 @@ body {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
-
-
 
 /*ICONOS DE USUARIO Y CONTRASEÑA*/
 .input-box {
@@ -112,7 +116,6 @@ body {
   transform: scale(1.03);
 }
 
-
 /*LETRAS DE LOS BOTONES "SOBRE NOSOTROS" Y "LOGIN" BLANCAS*/
 
 .register-btn {
@@ -132,9 +135,6 @@ body {
 .login-btn:hover {
   color: white !important;
 }
-
-
-
 
 /*ANIMACION*/
 .toggle-box {
@@ -208,3 +208,8 @@ body {
   transform: scale(1.05);
   transition: background 0.3s ease, transform 0.3s ease;
 }
+
+
+
+
+

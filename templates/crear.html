@@ -14,7 +14,6 @@
     </div>
     <div class="nav">
         <a href="{{ url_for('predecir') }}">Inicio</a>
-        <!-- <a href="{{ url_for('actualizar_modelo') }}">Actualizar Modelo</a> -->
     </div>
 </header>
 
@@ -86,10 +85,10 @@
             {% endfor %}
         </select>
         
-        <button type="submit">Agregar Candidato</button>
+        <button type="submit" style="margin-top: 2rem !important;">Agregar Candidato</button>
     </form>
 
-    <h2>Candidatos Agregados</h2>
+    <h2 style="text-align: center; display: block; margin-left: auto; margin-right: auto;">Candidatos Agregados</h2>
 
     <div id="tabla-container" class="tabla-container">
         <table>
@@ -138,7 +137,7 @@
 <footer class="footer">
     <div class="footer-content">
         <div class="footer-logo">
-            <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image">
+            <img src="{{ url_for('static', filename='images/logoPerfectMatch.png') }}" alt="AI Image">
         </div>
         <div class="footer-description">
             <p>

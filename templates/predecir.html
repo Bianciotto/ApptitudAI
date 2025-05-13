@@ -9,12 +9,12 @@
 </head>
 
 <header>
-    
     <div class="logo">
-        <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image"> <!-- Agrega tu imagen aquí -->
+        <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image">
     </div>
     
     <div class="nav">
+        <a href="{{ url_for('enviar_correos') }}">Enviar mails</a>
         <a href="{{ url_for('mostrar_etiquetas') }}">Configurar Etiquetas</a>
         <a href="{{ url_for('crear_csv') }}">Crear CSV</a>
         <a href="{{ url_for('postulantes') }}">Ver Postulantes</a>
@@ -23,7 +23,7 @@
 
 <body>
     
-    <h1 id="typewriter"></h1>
+    <h1>Predicción de Candidatos</h1>
     
     <form action="/predecir" method="post" enctype="multipart/form-data">
         <h3>Sube un archivo CSV para hacer predicciones:</h3>
@@ -35,11 +35,11 @@
         <button class="Highbutton" type="submit">Predecir</button>
     </form>
     
-    <form action="/estadisticas" method="get" style=" box-shadow: 0 4px 10px rgb(73, 194, 250); border-radius: 34px; background: rgba(24, 24, 24, 0.76);">
-        <button style="background-color:#0078A0;"  type="submit" >Estadísticas</button>
+    <form action="/estadisticas" method="get" style=" box-shadow: 0 0 8px rgba(255, 255, 255, 0.3); border-radius: 25px; background-color: rgba(255, 255, 255, 0.2)">
+        <button style="background-color: rgba(255, 255, 255, 0.2);border: 10px solid #fefefe; border-radius: 32px; "  type="submit" >Estadísticas</button>
     </form>
 
-    <h2>Ejemplo</h2>
+    <h2 style="text-align: center; display: block; margin-left: auto; margin-right: auto;">Ejemplo</h2>
     
     <div class="tabla-container">
         <table>
@@ -80,11 +80,12 @@
 <footer class="footer">
     <div class="footer-content">
         <div class="footer-logo">
-            <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image">
+            <img src="{{ url_for('static', filename='images/logoPerfectMatch.png') }}" alt="PF Image">
         </div>
         <div class="footer-description">
             <p>
                 Abal, Fernando Gabriel<br>
+                Ábalos, Lucas Gabriel<br>
                 Bianciotto, Matías Felipe<br>
                 Gutiérrez, Diego Germán<br>
                 Roldan, Guadalupe <br>

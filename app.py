@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, send_file, session, url_for, flash
+from flask import Flask, redirect, render_template, request, send_file, session, url_for, flash, has_request_context
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
@@ -17,6 +17,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import re
 from flask import Flask
 from flask_mail import Mail, Message
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "MiraQueSéQueMeVes"  # Necesario para sesiones
@@ -29,10 +30,10 @@ app.config.update(
     MAIL_PORT=587,
     MAIL_USE_TLS=True,
     MAIL_USERNAME='perfectmatch.rrhh@gmail.com',
-    MAIL_PASSWORD='apptitudai'
+    MAIL_PASSWORD='wgro qiym amag zbjy'
 )
-email = Mail(app)
 
+email = Mail(app)
 
 
 
@@ -190,6 +191,38 @@ except Exception as e:
     print("Error al cargar los encoders:", e)
     raise e
 
+def login_required(roles=None):
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if 'username' not in session:
+                return redirect(url_for('login'))
+            if roles and session.get('type') not in roles:
+                return "Acceso no autorizado"
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
+
+
+# Página principal postulacion
+@app.route("/postulacionIT")
+def postulacionIT():
+    # Las opciones ya están en la base de datos, no necesitamos encoders aquí
+    opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
+    opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
+    opciones_habilidades = [habilidad.nombre for habilidad in Habilidad.query.all()]
+
+    session["opciones_educacion"] = opciones_educacion
+    session["opciones_tecnologias"] = opciones_tecnologias
+    session["opciones_habilidades"] = opciones_habilidades
+
+    return render_template(
+        "postulacion.html",
+        opciones_educacion=session["opciones_educacion"],
+        opciones_tecnologias=session["opciones_tecnologias"],
+        opciones_habilidades=session["opciones_habilidades"]
+    )
+
 
 # Página principal
 @app.route('/')
@@ -219,11 +252,18 @@ def login():
             else:
                 return "Rol no reconocido"
         else:
-            return "Credenciales inválidas"
+            return render_template("auth/login.html")
     return render_template("auth/login.html")
 
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
+
+
 @app.route('/admin_rrhh')
+@login_required(roles=["Admin_RRHH"])
 def admin_rrhh():
     #if 'username' in session and session.get('type') == "Admin_RRHH":
         #return f"Bienvenido {session.get('username')} al panel de Administrador de RRHH."
@@ -309,6 +349,7 @@ def entrenar_inicio():
 
 # Página de estadísticas
 @app.route("/estadisticas", methods=["GET", "POST"])
+@login_required(roles=["Admin_RRHH"])
 def estadisticas():
     if request.method == "POST":
         return render_template("predecir.html")
@@ -362,6 +403,7 @@ def estadisticas():
 
 # Ruta para predecir con un archivo CSV
 @app.route("/predecir", methods=["GET", "POST"])
+@login_required(roles=["Admin_RRHH"])
 def predecir():
     if request.method == "POST":
 
@@ -432,6 +474,7 @@ def predecir():
 
 
 @app.route("/postulantes")
+@login_required(roles=["Admin_RRHH"])
 def postulantes():
     candidatos = Candidato.query.order_by(Candidato.puntaje.desc()).all()
     #candidatos = Candidato.query.all()
@@ -473,6 +516,7 @@ def postulantes():
 
 
 @app.route("/limpiar_postulantes", methods=["POST"])
+@login_required(roles=["Admin_RRHH"])
 def limpiar_postulantes():
     try:
         # Eliminar todos los registros de la tabla "Candidato"
@@ -490,6 +534,7 @@ def limpiar_postulantes():
 
 
 @app.route("/predecir_postulantes", methods=["POST"])
+@login_required(roles=["Admin_RRHH"])
 def predecir_postulantes():
     try:
         # Cargar los candidatos existentes
@@ -553,13 +598,15 @@ def predecir_postulantes():
 
 
 @app.route('/asignar_puntajes', methods=["GET", "POST"])
+@login_required(roles=["Admin_RRHH"])
 def asignar_puntajes():
     candidatos = Candidato.query.filter_by(aptitud=True).all()
     for c in candidatos:
         c.puntaje = calcular_puntaje(c)
     db.session.commit()
-    flash('Puntajes asignados correctamente.', 'success')
-    return redirect(url_for('postulantes'))
+    if has_request_context():
+        flash('Puntajes asignados correctamente.', 'success')
+        return redirect(url_for('postulantes'))
 
 def calcular_puntaje(candidato):
     puntaje = 0
@@ -583,8 +630,9 @@ def calcular_puntaje(candidato):
 
     return puntaje
 
-
+#EL SERVICIO POST DEL CREAR YA NO SE USA
 @app.route("/crear", methods=["GET", "POST"])
+@login_required(roles=["Admin_RRHH"])
 def crear_csv():
     # Inicializar valores dinámicos para los inputs select
     encoder_educacion_path = get_path("encoder_educacion.pkl")
@@ -600,6 +648,7 @@ def crear_csv():
     if "candidatos" not in session:
         session["candidatos"] = []
 
+    #ESTE POST YA NO SE USA, LIMPIAR
     if request.method == "POST":
         # Obtener datos del formulario
         nombre = request.form["nombre"]
@@ -656,8 +705,9 @@ def crear_csv():
         opciones_tecnologias=session["opciones_tecnologias"]
     )
 
-
+#ESTO SE VA TAMBIEN, LIMPIAR
 @app.route("/eliminar_candidato/<int:indice>", methods=["POST"])
+@login_required(roles=["Admin_RRHH"])
 def eliminar_candidato(indice):
     if "candidatos" in session:
         try:
@@ -669,8 +719,9 @@ def eliminar_candidato(indice):
             return "Índice fuera de rango.", 400
     return redirect("/crear#tabla-container")
 
-
+#LIMPIAR
 @app.route("/guardar_csv", methods=["POST"])
+@login_required(roles=["Admin_RRHH"])
 def guardar_csv():
     # Obtener los datos de la sesión
     candidatos = session.get("candidatos", [])
@@ -696,6 +747,7 @@ def guardar_csv():
 
 
 @app.route("/etiquetas")
+@login_required(roles=["Admin_RRHH"])
 def mostrar_etiquetas():
     educaciones = Educacion.query.all()
     tecnologias = Tecnologia.query.all()
@@ -719,6 +771,7 @@ def mostrar_etiquetas():
 
 
 @app.route("/asignar_valores", methods=["POST"])
+@login_required(roles=["Admin_RRHH"])
 def asignar_valores():
     # Educación
     educacion_id = request.form.get("educacion_id")
@@ -746,6 +799,80 @@ def asignar_valores():
 
     db.session.commit()
     return redirect(url_for("mostrar_etiquetas"))
+
+
+@app.route("/postulacion", methods=["GET", "POST"])
+def postulacion():
+    if request.method == "POST":
+        # Obtener datos del formulario
+        nombre = request.form["nombre"]
+        apellido = request.form["apellido"]
+        email = request.form["email"]
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_regex, email):
+            flash("Correo electrónico inválido. Por favor ingresa un email válido.")
+            return redirect("/postulacion")
+        telefono = request.form["telefono"]
+        if not telefono.isdigit() or len(telefono) < 8 or len(telefono) > 10:
+            flash("El teléfono debe contener solo números y tener entre 8 y 10 cifras.")
+            return redirect("/postulacion")
+        ubicacion = request.form["ubicacion"]
+        PROVINCIAS_ARG = [
+        "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
+        "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
+        "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
+        "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
+        "Tierra del Fuego", "Tucumán"]
+        if ubicacion not in PROVINCIAS_ARG:
+            flash("Ubicación no válida. Selecciona una provincia de Argentina.")
+            return redirect("/postulacion")
+        experiencia = int(request.form["experiencia"])
+        educacion = request.form["educacion"]
+        tecnologias = request.form["tecnologias"]
+        habilidades = request.form["habilidades"]
+
+        try:
+            # Buscar el ID correspondiente en las tablas
+            educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
+            tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
+            habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
+
+            if not educacion_obj or not tecnologia_obj or not habilidad_obj:
+                return "Error: Valores inválidos seleccionados.", 400
+
+            idedu = educacion_obj.idedu
+            idtec = tecnologia_obj.idtec
+            idhab = habilidad_obj.idhab
+
+            # Crear y guardar el candidato
+            nuevo_candidato_db = Candidato(
+                id=email,
+                nombre=nombre,
+                apellido=apellido,  # Nuevo campo
+                mail=email,
+                telefono=telefono,  # Nuevo campo
+                ubicacion=ubicacion,
+                experiencia=experiencia,
+                idedu=idedu,
+                idtec=idtec,
+                idhab=idhab,
+                aptitud=None
+            )
+            db.session.add(nuevo_candidato_db)
+            db.session.commit()
+            print(f"Candidato {nombre} guardado correctamente en la base de datos.")
+        except Exception as e:
+            print(f"Error al guardar el candidato: {e}")
+            return "Error al guardar el candidato.", 500
+
+        return redirect("/postulacionIT")
+
+    return render_template(
+        "postulacion.html",
+        opciones_educacion=session["opciones_educacion"],
+        opciones_tecnologias=session["opciones_tecnologias"],
+        opciones_habilidades=session["opciones_habilidades"]
+    )
 
 
 if __name__ == "__main__":

@@ -6,16 +6,17 @@
     <title>Etiquetas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='StylesCrear.css') }}">
 </head>
+
+<header>
+    <div class="logo">
+        <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Logo">
+    </div>
+    <div class="nav">
+        <a href="{{ url_for('predecir') }}">Inicio</a>
+    </div>
+</header>
+
 <body class="container mt-4">
-    <header>
-        <div class="logo">
-            <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Logo">
-        </div>
-        <div class="nav">
-            <a href="{{ url_for('predecir') }}">Inicio</a>
-        </div>
-    </header>
-    
     <h1 class="mb-4">Etiquetas de Evaluación</h1>
     <h3>Educación</h3>
     {{ tabla_edu|safe }}
@@ -24,8 +25,8 @@
     <h3>Habilidades</h3>
     {{ tabla_hab|safe }}
     
-    <hr class="my-4">
-    <h3>Asignar nueva importancia (de 0 a 3)</h3>
+    <!--<hr class="my-4">-->
+    <h3 style="text-align: center; display: block; margin-left: auto; margin-right: auto;">Asignar nueva importancia (de 0 a 3)</h3>
     <form method="POST" action="{{ url_for('asignar_valores') }}">
         <div class="row mb-3">
             <div class="col-md-4">
