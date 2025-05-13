@@ -68,7 +68,7 @@ def test_agregar_puntaje(app, setup_db):
         assert postulante is not None
         assert postulante.puntaje == 33
 
-# Verifica que el cálculo de puntaje funcione correctamente para varios candidatos parametrizados
+# Test que Verifica que el cálculo de puntaje funcione correctamente para varios candidatos parametrizados
 @pytest.mark.parametrize(
     "nombre, apellido, email, telefono, ubicacion, experiencia, educacion, tecnologias, habilidades",
     [
@@ -204,6 +204,7 @@ def test_ranking_con_empate(app, setup_db):
         assert puntajes == sorted(puntajes, reverse=True)
         assert puntajes.count(puntajes[0]) >= 2 
 
+#test que prueba que no se le asigne un puntaje a los postulantes no aptos
 def test_calcular_puntaje_a_no_apto(app, setup_db):
      with app.app_context():
         ids = app.test_ids
