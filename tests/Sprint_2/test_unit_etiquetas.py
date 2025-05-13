@@ -27,28 +27,28 @@ def setup_db(app):
         db.session.remove()
         db.drop_all()
 
-def test_cambiar_peso_etiqueta_educacion(app, setup_db):
+def test_cambiar_peso_etiqueta_educacion(app, setup_db, importancia = 3):
     with app.app_context():
         edu = Educacion.query.filter_by(nombre = "Secundario").first()
-        edu.importancia = 3
+        edu.importancia = importancia
         db.session.commit()
         edu_actualizada = Educacion.query.filter_by(nombre = "Secundario").first()
         assert edu_actualizada.importancia == 3
 
 
-def test_cambiar_peso_etiqueta_tecnologia(app, setup_db):
+def test_cambiar_peso_etiqueta_tecnologia(app, setup_db, importancia = 3):
     with app.app_context():
         tec = Tecnologia.query.filter_by(nombre = "Java").first()
-        tec.importancia = 3
+        tec.importancia = importancia
         db.session.commit()
         tec_actualizada = Tecnologia.query.filter_by(nombre = "Java").first()
         assert tec_actualizada.importancia == 3
 
 
-def test_cambiar_peso_etiqueta_habilidad(app, setup_db):
+def test_cambiar_peso_etiqueta_habilidad(app, setup_db, importancia = 3):
     with app.app_context():
         hab = Habilidad.query.filter_by(nombre = "Liderazgo").first()
-        hab.importancia = 3
+        hab.importancia = importancia
         db.session.commit()
         hab_actualizada = Habilidad.query.filter_by(nombre = "Liderazgo").first()
         assert hab_actualizada.importancia == 3

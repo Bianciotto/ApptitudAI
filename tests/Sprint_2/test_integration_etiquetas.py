@@ -59,33 +59,33 @@ def test_actualizacion_importancia(client, importancia):
         
         db.session.commit()
 
-#Test que prueba que no se actualizen las etiquetas con datos negativos (❌Fallando❌)
-#@pytest.mark.parametrize(
-#        "importancia",
-#        [
-#            (-1),
-#            (4)
-#        ]
-#)
-#def test_actualizar_etiquetas_fuera_de_rango(client, importancia):
-#    with app.app_context():
-#        edu = db.session.execute(db.select(Educacion).filter_by(nombre="Secundario")).scalar_one()
-#        id_edu = edu.idedu
-#        
-#        tec = db.session.execute(db.select(Tecnologia).filter_by(nombre ="Java")).scalar_one()
-#        id_tec = tec.idtec
-#       
-#        hab = db.session.execute(db.select(Habilidad).filter_by(nombre ="Liderazgo")).scalar_one()
-#        id_hab = hab.idhab
+#Test que prueba que no se actualizen las etiquetas con datos no validos (❌Fallando❌)
+@pytest.mark.parametrize(
+        "importancia",
+        [
+            (-1),
+            (4)
+        ]
+)
+def test_actualizar_etiquetas_fuera_de_rango(client, importancia):
+    with app.app_context():
+        edu = db.session.execute(db.select(Educacion).filter_by(nombre="Secundario")).scalar_one()
+        id_edu = edu.idedu
+        
+        tec = db.session.execute(db.select(Tecnologia).filter_by(nombre ="Java")).scalar_one()
+        id_tec = tec.idtec
        
-#    respuesta = client.post("/asignar_valores", data={
-#    "educacion_id": id_edu,
-#    "valor_educacion": importancia,
-#    "tecnologia_id": id_tec,
-#    "valor_tecnologia": importancia,
-#    "habilidad_id": id_hab,
-#    "valor_habilidad": importancia
-#    }, follow_redirects=True)
-#
-#   assert respuesta.status_code == 400
+        hab = db.session.execute(db.select(Habilidad).filter_by(nombre ="Liderazgo")).scalar_one()
+        id_hab = hab.idhab
+       
+    respuesta = client.post("/asignar_valores", data={
+    "educacion_id": id_edu,
+    "valor_educacion": importancia,
+    "tecnologia_id": id_tec,
+    "valor_tecnologia": importancia,
+    "habilidad_id": id_hab,
+    "valor_habilidad": importancia
+    }, follow_redirects=True)
+
+    assert respuesta.status_code == 400
 
