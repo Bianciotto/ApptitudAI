@@ -1,16 +1,16 @@
 import pytest
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from FlaskLocal import db, Educacion, Tecnologia, Habilidad
+from app import app as app_local, db, Educacion, Tecnologia, Habilidad
 
 @pytest.fixture
 def app():
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['TESTING'] = True
-    db.init_app(app)
-    return app
+    app_local = Flask(__name__)
+    app_local.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app_local.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app_local.config['TESTING'] = True
+    db.init_app(app_local)
+    return app_local
 
 @pytest.fixture
 def setup_db(app):

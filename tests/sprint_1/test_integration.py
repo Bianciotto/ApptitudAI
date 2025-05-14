@@ -1,8 +1,7 @@
 from typing import Literal
 from flask.testing import FlaskClient
 import pytest
-from FlaskLocal import Candidato,db
-from FlaskCandidatos import app as app_candidatos
+from app import app as app_candidatos,Candidato,db
 
 # Fixture para eliminar candidatos específicos antes de ejecutar los tests
 @pytest.fixture(scope="function", autouse=True)
