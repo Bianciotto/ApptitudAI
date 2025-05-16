@@ -657,11 +657,11 @@ def crear_csv():
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, email):
             flash("Correo electrónico inválido. Por favor ingresa un email válido.")
-            return redirect("/postulacion")
+            return redirect("/crear")
         telefono = request.form["telefono"]
         if not telefono.isdigit() or len(telefono) < 8 or len(telefono) > 10:
             flash("El teléfono debe contener solo números y tener entre 8 y 10 cifras.")
-            return redirect("/postulacion")
+            return redirect("/crear")
         ubicacion = request.form["ubicacion"]
         PROVINCIAS_ARG = [
         "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
@@ -671,7 +671,7 @@ def crear_csv():
         "Tierra del Fuego", "Tucumán"]
         if ubicacion not in PROVINCIAS_ARG:
             flash("Ubicación no válida. Selecciona una provincia de Argentina.")
-            return redirect("/postulacion")
+            return redirect("/crear")
         experiencia = int(request.form["experiencia"])
         educacion = request.form["educacion"]
         tecnologias = request.form["tecnologias"]
