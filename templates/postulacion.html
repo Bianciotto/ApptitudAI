@@ -12,6 +12,11 @@
     <div class="logo">
         <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Image">
     </div>
+    {% if es_admin %}
+        <div class="nav">
+            <a href="{{ url_for('predecir') }}">Inicio</a>
+        </div>
+    {% endif %}
 </header>
 
 <body>

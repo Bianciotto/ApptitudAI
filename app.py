@@ -36,7 +36,7 @@ app.config.update(
 email = Mail(app)
 
 
-
+# Base de datos
 class Candidato(db.Model):
     id = db.Column(db.String, primary_key=True)  # Usamos el correo como ID único
     nombre = db.Column(db.String(100), nullable=False)
@@ -140,13 +140,21 @@ if not os.path.exists("erp_rrhh.db"):
         print("Usuarios ficticios creados con éxito.")
 """
 
+
+# FUNCIONES
+def abrir_navegador():
+    webbrowser.open("http://127.0.0.1:5000/")  # URL de Flask
+
+
 def obtener_correos_aptos():
     candidatos_aptos = Candidato.query.filter_by(aptitud=True).all()
     return [c.mail for c in candidatos_aptos if c.mail]
 
+
 def obtener_correos_noaptos():
     candidatos_no_aptos = Candidato.query.filter_by(aptitud=False).all()
     return [c.mail for c in candidatos_no_aptos if c.mail]
+
 
 @app.route('/enviar_correos')
 def enviar_correos():
@@ -170,11 +178,6 @@ def enviar_correos():
             conn.send(mensaje)
     return redirect('/predecir')     
 
-
-def abrir_navegador():
-    webbrowser.open("http://127.0.0.1:5000/")  # URL de Flask
-
-# 🔹 Obtener la ruta correcta dentro del ejecutable
 
 # 🔹 Cargar el modelo correctamente
 modelo_path = get_path("modelo_candidatos.pkl")
@@ -224,7 +227,83 @@ def postulacionIT():
     )
 
 
-# Página principal
+@app.route("/postulacion", methods=["GET", "POST"])
+def postulacion():
+    #es_admin = "username" in session and session.get("type") == "Admin_RRHH"
+
+    if request.method == "POST":
+        # Obtener datos del formulario
+        nombre = request.form["nombre"]
+        apellido = request.form["apellido"]
+        email = request.form["email"]
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_regex, email):
+            flash("Por favor ingresa un email válido.<br>Ejemplo: JuanPerez@gmail.com")
+            return redirect("/postulacion")
+        telefono = request.form["telefono"]
+        if not telefono.isdigit() or len(telefono) < 8 or len(telefono) > 10:
+            flash("El teléfono debe contener solo números y tener entre 8 y 10 cifras.")
+            return redirect("/postulacion")
+        ubicacion = request.form["ubicacion"]
+        PROVINCIAS_ARG = [
+        "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
+        "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
+        "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
+        "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
+        "Tierra del Fuego", "Tucumán"]
+        if ubicacion not in PROVINCIAS_ARG:
+            flash("Ubicación no válida. Selecciona una provincia de Argentina.")
+            return redirect("/postulacion")
+        experiencia = int(request.form["experiencia"])
+        educacion = request.form["educacion"]
+        tecnologias = request.form["tecnologias"]
+        habilidades = request.form["habilidades"]
+
+        try:
+            # Buscar el ID correspondiente en las tablas
+            educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
+            tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
+            habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
+
+            if not educacion_obj or not tecnologia_obj or not habilidad_obj:
+                flash("Error: Valores inválidos seleccionados.")
+                return redirect("/postulacion")
+
+            idedu = educacion_obj.idedu
+            idtec = tecnologia_obj.idtec
+            idhab = habilidad_obj.idhab
+
+            # Crear y guardar el candidato
+            nuevo_candidato_db = Candidato(
+                id=email,
+                nombre=nombre,
+                apellido=apellido,
+                mail=email,
+                telefono=telefono,
+                ubicacion=ubicacion,
+                experiencia=experiencia,
+                idedu=idedu,
+                idtec=idtec,
+                idhab=idhab,
+                aptitud=None
+            )
+            db.session.add(nuevo_candidato_db)
+            db.session.commit()
+            flash(f"Candidato {nombre} guardado correctamente en la base de datos.")
+        except Exception as e:
+            flash(f"Error al guardar el candidato: {e}")
+            return redirect("/postulacion")
+
+    return render_template(
+        "postulacion.html",
+        #es_admin=es_admin,
+        opciones_educacion=session["opciones_educacion"],
+        opciones_tecnologias=session["opciones_tecnologias"],
+        opciones_habilidades=session["opciones_habilidades"]
+    )
+
+
+# Página principal RRHH
 @app.route('/')
 def index():
     return redirect('/login')
@@ -282,69 +361,6 @@ def analista():
     if 'username' in session and session.get('type') == "Analista_Datos":
         return f"Bienvenido {session.get('username')} al panel de Analista de Datos."
     return redirect('/login')
-
-
-"""
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-
-@app.route("/", methods=["GET", "POST"])
-def entrenar_inicio():
-    if request.method == "POST":
-        if "archivo_entrenamiento" not in request.files:
-            return "Por favor, sube un archivo CSV."
-
-        archivo = request.files["archivo_entrenamiento"]
-        if archivo.filename == "":
-            return "No seleccionaste ningún archivo."
-
-        try:
-            dataSet = pd.read_csv(archivo)
-            dataSet2 = dataSet.copy()
-
-            # Inicializar encoders
-            encoder_educacion = LabelEncoder()
-            encoder_habilidades = LabelEncoder()
-            encoder_tecnologias = LabelEncoder()
-
-            # Entrenamiento
-            dataSet["Educacion"] = encoder_educacion.fit_transform(dataSet["Educacion"])
-            dataSet["Habilidades"] = encoder_habilidades.fit_transform(dataSet["Habilidades"])
-            dataSet["Tecnologías"] = encoder_tecnologias.fit_transform(dataSet["Tecnologías"])
-            dataSet["Apto"] = dataSet["Apto"].map({"Apto": 1, "No Apto": 0})
-
-            X = dataSet[["Experiencia", "Educacion", "Tecnologías", "Habilidades"]]
-            y = dataSet["Apto"]
-
-            modelo = DecisionTreeClassifier(max_depth=5)
-            modelo.fit(X, y)
-
-            # Guardar modelo y encoders
-            joblib.dump(modelo, get_path("modelo_candidatos.pkl"))
-            joblib.dump(encoder_educacion, get_path("encoder_educacion.pkl"))
-            joblib.dump(encoder_habilidades, get_path("encoder_habilidades.pkl"))
-            joblib.dump(encoder_tecnologias, get_path("encoder_tecnologias.pkl"))
-
-            # Guardar dataset
-            dataSet2.to_csv(get_path("entrenamientoActualizado.csv"), index=False)
-
-            # Guardar en sesión para estadísticas
-            session["clases_educacion"] = list(encoder_educacion.classes_)
-            session["clases_habilidades"] = list(encoder_habilidades.classes_)
-            session["clases_tecnologias"] = list(encoder_tecnologias.classes_)
-
-            session["modelo_entrenado"] = True
-
-            # Redirigir a la página de estadísticas
-            return redirect("/estadisticas")
-
-        except Exception as e:
-            return f"❌ Ocurrió un error durante el entrenamiento: {e}"
-
-    return render_template("index.html")
-"""
 
 
 # Página de estadísticas
@@ -630,25 +646,19 @@ def calcular_puntaje(candidato):
 
     return puntaje
 
-#EL SERVICIO POST DEL CREAR YA NO SE USA
-@app.route("/crear", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH"])
-def crear_csv():
-    # Inicializar valores dinámicos para los inputs select
-    encoder_educacion_path = get_path("encoder_educacion.pkl")
-    encoder_habilidades_path = get_path("encoder_habilidades.pkl")
-    encoder_tecnologias_path = get_path("encoder_tecnologias.pkl")
-    encoder_educacion = joblib.load(encoder_educacion_path)
-    session["opciones_educacion"] = list(encoder_educacion.classes_)
-    encoder_habilidades = joblib.load(encoder_habilidades_path)
-    session["opciones_habilidades"] = list(encoder_habilidades.classes_)
-    encoder_tecnologias = joblib.load(encoder_tecnologias_path)
-    session["opciones_tecnologias"] = list(encoder_tecnologias.classes_)
-    
-    if "candidatos" not in session:
-        session["candidatos"] = []
 
-    #ESTE POST YA NO SE USA, LIMPIAR
+@app.route("/cargarCV", methods=["GET", "POST"])
+@login_required(roles=["Admin_RRHH"])
+def cargarCV():
+    #es_admin = "username" in session and session.get("type") == "Admin_RRHH"
+    opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
+    opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
+    opciones_habilidades = [habilidad.nombre for habilidad in Habilidad.query.all()]
+
+    session["opciones_educacion"] = opciones_educacion
+    session["opciones_tecnologias"] = opciones_tecnologias
+    session["opciones_habilidades"] = opciones_habilidades
+
     if request.method == "POST":
         # Obtener datos del formulario
         nombre = request.form["nombre"]
@@ -656,12 +666,12 @@ def crear_csv():
         email = request.form["email"]
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, email):
-            flash("Correo electrónico inválido. Por favor ingresa un email válido.")
-            return redirect("/crear")
+            flash("Por favor ingresa un email válido.<br>Ejemplo: JuanPerez@gmail.com")
+            return redirect("/cargarCV")
         telefono = request.form["telefono"]
         if not telefono.isdigit() or len(telefono) < 8 or len(telefono) > 10:
             flash("El teléfono debe contener solo números y tener entre 8 y 10 cifras.")
-            return redirect("/crear")
+            return redirect("/cargarCV")
         ubicacion = request.form["ubicacion"]
         PROVINCIAS_ARG = [
         "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
@@ -671,79 +681,54 @@ def crear_csv():
         "Tierra del Fuego", "Tucumán"]
         if ubicacion not in PROVINCIAS_ARG:
             flash("Ubicación no válida. Selecciona una provincia de Argentina.")
-            return redirect("/crear")
+            return redirect("/cargarCV")
         experiencia = int(request.form["experiencia"])
         educacion = request.form["educacion"]
         tecnologias = request.form["tecnologias"]
         habilidades = request.form["habilidades"]
 
-        # Crear un nuevo candidato como un diccionario
-        nuevo_candidato = {
-            "Nombre": nombre,
-            "Apellido": apellido,
-            "Experiencia": experiencia,
-            "Educacion": educacion,
-            "Tecnologías": tecnologias,
-            "Habilidades": habilidades,
-            "Apto": ""  # La columna Apto se evaluará después
-        }
-
-        # Agregar el nuevo candidato a la lista de candidatos
-        if nuevo_candidato not in session["candidatos"]:
-            session["candidatos"].append(nuevo_candidato)
-            session.modified = True  # Marcar la sesión como modificada
-        else:
-            session.modified = False
-            return redirect("/crear")
-
-    # Renderizar la página HTML con los candidatos actuales
-    return render_template(
-        "crear.html",
-        candidatos=session["candidatos"],
-        opciones_educacion=session["opciones_educacion"],
-        opciones_habilidades=session["opciones_habilidades"],
-        opciones_tecnologias=session["opciones_tecnologias"]
-    )
-
-#ESTO SE VA TAMBIEN, LIMPIAR
-@app.route("/eliminar_candidato/<int:indice>", methods=["POST"])
-@login_required(roles=["Admin_RRHH"])
-def eliminar_candidato(indice):
-    if "candidatos" in session:
         try:
-            # Eliminar el candidato en el índice especificado
-            session["candidatos"].pop(indice)
-            session.modified = True  # Marcar la sesión como modificada
-            return redirect("/crear#tabla-container")  # Redirigir nuevamente a la página de creación
-        except IndexError:
-            return "Índice fuera de rango.", 400
-    return redirect("/crear#tabla-container")
+            # Buscar el ID correspondiente en las tablas
+            educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
+            tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
+            habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
 
-#LIMPIAR
-@app.route("/guardar_csv", methods=["POST"])
-@login_required(roles=["Admin_RRHH"])
-def guardar_csv():
-    # Obtener los datos de la sesión
-    candidatos = session.get("candidatos", [])
+            if not educacion_obj or not tecnologia_obj or not habilidad_obj:
+                flash("Error: Valores inválidos seleccionados.")
+                return redirect("/cargarCV")
 
-    if not candidatos:
-        return redirect("/crear#tabla-container")
+            idedu = educacion_obj.idedu
+            idtec = tecnologia_obj.idtec
+            idhab = habilidad_obj.idhab
 
-    # Crear un DataFrame con los datos de los candidatos
-    dataSet = pd.DataFrame(candidatos)
+            # Crear y guardar el candidato
+            nuevo_candidato_db = Candidato(
+                id=email,
+                nombre=nombre,
+                apellido=apellido,
+                mail=email,
+                telefono=telefono,
+                ubicacion=ubicacion,
+                experiencia=experiencia,
+                idedu=idedu,
+                idtec=idtec,
+                idhab=idhab,
+                aptitud=None
+            )
+            db.session.add(nuevo_candidato_db)
+            db.session.commit()
+            flash(f"Candidato {nombre} guardado correctamente en la base de datos.")
+        except Exception as e:
+            flash(f"Error al guardar el candidato: {e}")
+            return redirect("/cargarCV")
 
-    # Reordenar las columnas en el orden deseado
-    columnasOrdenadas = ["Nombre", "Apellido", "Experiencia", "Educacion", "Tecnologías", "Habilidades", "Apto"]
-    dataSet = dataSet[columnasOrdenadas]
-
-    # Guardar el archivo CSV con el orden adecuado
-    candidatosPagina_path = get_path("candidatosPagina.csv")
-    dataSet.to_csv(candidatosPagina_path, index=False)
-
-    # Limpiar la sesión después de guardar el archivo
-    session.pop("candidatos", None)
-
-    return send_file(candidatosPagina_path, as_attachment=True)
+    return render_template(
+        "cargarCV.html",
+        #es_admin=es_admin,
+        opciones_educacion=session["opciones_educacion"],
+        opciones_tecnologias=session["opciones_tecnologias"],
+        opciones_habilidades=session["opciones_habilidades"]
+    )
 
 
 @app.route("/etiquetas")
@@ -799,80 +784,6 @@ def asignar_valores():
 
     db.session.commit()
     return redirect(url_for("mostrar_etiquetas"))
-
-
-@app.route("/postulacion", methods=["GET", "POST"])
-def postulacion():
-    if request.method == "POST":
-        # Obtener datos del formulario
-        nombre = request.form["nombre"]
-        apellido = request.form["apellido"]
-        email = request.form["email"]
-        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not re.match(email_regex, email):
-            flash("Correo electrónico inválido. Por favor ingresa un email válido.")
-            return redirect("/postulacion")
-        telefono = request.form["telefono"]
-        if not telefono.isdigit() or len(telefono) < 8 or len(telefono) > 10:
-            flash("El teléfono debe contener solo números y tener entre 8 y 10 cifras.")
-            return redirect("/postulacion")
-        ubicacion = request.form["ubicacion"]
-        PROVINCIAS_ARG = [
-        "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
-        "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
-        "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
-        "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
-        "Tierra del Fuego", "Tucumán"]
-        if ubicacion not in PROVINCIAS_ARG:
-            flash("Ubicación no válida. Selecciona una provincia de Argentina.")
-            return redirect("/postulacion")
-        experiencia = int(request.form["experiencia"])
-        educacion = request.form["educacion"]
-        tecnologias = request.form["tecnologias"]
-        habilidades = request.form["habilidades"]
-
-        try:
-            # Buscar el ID correspondiente en las tablas
-            educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
-            tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
-            habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
-
-            if not educacion_obj or not tecnologia_obj or not habilidad_obj:
-                return "Error: Valores inválidos seleccionados.", 400
-
-            idedu = educacion_obj.idedu
-            idtec = tecnologia_obj.idtec
-            idhab = habilidad_obj.idhab
-
-            # Crear y guardar el candidato
-            nuevo_candidato_db = Candidato(
-                id=email,
-                nombre=nombre,
-                apellido=apellido,  # Nuevo campo
-                mail=email,
-                telefono=telefono,  # Nuevo campo
-                ubicacion=ubicacion,
-                experiencia=experiencia,
-                idedu=idedu,
-                idtec=idtec,
-                idhab=idhab,
-                aptitud=None
-            )
-            db.session.add(nuevo_candidato_db)
-            db.session.commit()
-            print(f"Candidato {nombre} guardado correctamente en la base de datos.")
-        except Exception as e:
-            print(f"Error al guardar el candidato: {e}")
-            return "Error al guardar el candidato.", 500
-
-        return redirect("/postulacionIT")
-
-    return render_template(
-        "postulacion.html",
-        opciones_educacion=session["opciones_educacion"],
-        opciones_tecnologias=session["opciones_tecnologias"],
-        opciones_habilidades=session["opciones_habilidades"]
-    )
 
 
 if __name__ == "__main__":
