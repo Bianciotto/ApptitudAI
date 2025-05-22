@@ -206,36 +206,9 @@ def obtener_correos_noaptos():
     candidatos_no_aptos = Candidato.query.filter_by(aptitud=False).all()
     return [c.mail for c in candidatos_no_aptos if c.mail]
 
-def crear_oferta(nombre, fecha_cierre, max_candidatos):
-    nueva_oferta = OfertaLaboral(
-        nombre=nombre,
-        fecha_cierre=fecha_cierre,
-        max_candidatos=max_candidatos
-    )
-    db.session.add(nueva_oferta)
-    db.session.commit()
 
-    # 🔹 Cargar encoders y generar etiquetas
-    encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
-    encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
-    encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
 
-    # Asignar etiquetas específicas a la oferta
-    for idx, clase in enumerate(encoder_educacion.classes_):
-        nueva_relacion = OfertaEducacion(idOfer=nueva_oferta.idOfer, idEdu=idx, importancia=0)
-        db.session.add(nueva_relacion)
 
-    for idx, clase in enumerate(encoder_tecnologias.classes_):
-        nueva_relacion = OfertaTecnologia(idOfer=nueva_oferta.idOfer, idTec=idx, importancia=0)
-        db.session.add(nueva_relacion)
-
-    for idx, clase in enumerate(encoder_habilidades.classes_):
-        nueva_relacion = OfertaHabilidad(idOfer=nueva_oferta.idOfer, idHab=idx, importancia=0)
-        db.session.add(nueva_relacion)
-
-    db.session.commit()
-    print(f"Oferta '{nombre}' creada con etiquetas únicas asociadas 🚀")
-    
 def login_required(roles=None):
     def decorator(f):
         @wraps(f)
@@ -261,8 +234,6 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = Usuario.query.filter_by(username=username).first()
-        
-        print("Ruta absoluta de la base de datos:", os.path.abspath("erp_rrhh.db"))
         
         if user and check_password_hash(user.password, password):
             session['username'] = user.username
@@ -460,12 +431,33 @@ def crear_oferta():
 
         nueva_oferta = OfertaLaboral(nombre=nombre, fecha_cierre=fecha_cierre, max_candidatos=max_candidatos)
         db.session.add(nueva_oferta)
-        db.session.commit()
+        db.session.flush()  # 🔹 Garantizar que obtenemos el ID antes de insertar etiquetas
+        
 
-        flash(f"Oferta '{nombre}' creada con éxito 🎉")
+        # 🔹 Cargar encoders
+        encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
+        encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
+        encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
+
+        # 🔹 Asignar etiquetas en las tablas intermedias con importancia = 0
+        for idx, clase in enumerate(encoder_educacion.classes_):
+            nueva_relacion = OfertaEducacion(idOfer=nueva_oferta.idOfer, idEdu=idx, importancia=0)
+            db.session.add(nueva_relacion)
+
+        for idx, clase in enumerate(encoder_tecnologias.classes_):
+            nueva_relacion = OfertaTecnologia(idOfer=nueva_oferta.idOfer, idTec=idx, importancia=0)
+            db.session.add(nueva_relacion)
+
+        for idx, clase in enumerate(encoder_habilidades.classes_):
+            nueva_relacion = OfertaHabilidad(idOfer=nueva_oferta.idOfer, idHab=idx, importancia=0)
+            db.session.add(nueva_relacion)
+
+        db.session.commit()  # 🔹 Guardar todas las asociaciones
+        flash(f"Oferta '{nombre}' creada con éxito 🎉 con etiquetas asignadas")
         return redirect("/crear_oferta")
 
-    return render_template("crear_oferta.html")  # Renderiza el formulario en GET
+    return render_template("crear_oferta.html")
+
 
 
 # Página de estadísticas
@@ -832,26 +824,28 @@ def cargarCV():
 @app.route("/etiquetas", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])
 def mostrar_etiquetas():
-    # Obtener todas las ofertas laborales
     ofertas = OfertaLaboral.query.all()
-    
-    # Si el usuario seleccionó una oferta, obtenemos su ID
     idOfer = request.form.get("idOfer") if request.method == "POST" else ofertas[0].idOfer if ofertas else None
 
-    # Si hay una oferta seleccionada, obtenemos sus etiquetas
+    educaciones, tecnologias, habilidades = [], [], []
+
     if idOfer:
         oferta = OfertaLaboral.query.get(idOfer)
         educaciones = OfertaEducacion.query.filter_by(idOfer=idOfer).all()
         tecnologias = OfertaTecnologia.query.filter_by(idOfer=idOfer).all()
         habilidades = OfertaHabilidad.query.filter_by(idOfer=idOfer).all()
 
-        df_edu = pd.DataFrame([{"Nombre": e.educacion.nombre, "Valor": e.importancia} for e in educaciones])
-        df_tec = pd.DataFrame([{"Nombre": t.tecnologia.nombre, "Valor": t.importancia} for t in tecnologias])
-        df_hab = pd.DataFrame([{"Nombre": h.habilidad.nombre, "Valor": h.importancia} for h in habilidades])
 
-        tabla_edu = df_edu.to_html(classes="table table-bordered", index=False)
-        tabla_tec = df_tec.to_html(classes="table table-bordered", index=False)
-        tabla_hab = df_hab.to_html(classes="table table-bordered", index=False)
+        # 🔹 Generar DataFrames
+        df_edu = pd.DataFrame([{"Nombre": e.educacion.nombre, "Valor": e.importancia} for e in educaciones]) if educaciones else pd.DataFrame()
+        df_tec = pd.DataFrame([{"Nombre": t.tecnologia.nombre, "Valor": t.importancia} for t in tecnologias]) if tecnologias else pd.DataFrame()
+        df_hab = pd.DataFrame([{"Nombre": h.habilidad.nombre, "Valor": h.importancia} for h in habilidades]) if habilidades else pd.DataFrame()
+
+        # 🔹 Depuración: Ver qué tienen los DataFrames antes de convertirlos a HTML
+
+        tabla_edu = df_edu.to_html(classes="table table-bordered", index=False) if not df_edu.empty else "<p>No hay etiquetas de educación</p>"
+        tabla_tec = df_tec.to_html(classes="table table-bordered", index=False) if not df_tec.empty else "<p>No hay etiquetas de tecnología</p>"
+        tabla_hab = df_hab.to_html(classes="table table-bordered", index=False) if not df_hab.empty else "<p>No hay etiquetas de habilidades</p>"
     else:
         oferta, tabla_edu, tabla_tec, tabla_hab = None, "", "", ""
 
@@ -861,7 +855,10 @@ def mostrar_etiquetas():
                            idOfer=idOfer,
                            tabla_edu=tabla_edu,
                            tabla_tec=tabla_tec,
-                           tabla_hab=tabla_hab)
+                           tabla_hab=tabla_hab,
+                           educaciones=educaciones,  # 🔹 Pasamos estas listas al HTML
+                           tecnologias=tecnologias,
+                           habilidades=habilidades)
 
 
 @app.route("/asignar_valores/<int:idOfer>", methods=["POST"])
