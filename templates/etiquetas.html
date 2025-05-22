@@ -17,13 +17,29 @@
 </header>
 
 <body class="container mt-4">
-    <h1 class="mb-4">Etiquetas de Evaluación</h1>
-    <h3>Educación</h3>
-    {{ tabla_edu|safe }}
-    <h3>Tecnologías</h3>
-    {{ tabla_tec|safe }}
-    <h3>Habilidades</h3>
-    {{ tabla_hab|safe }}
+    <form method="POST" action="{{ url_for('mostrar_etiquetas') }}">
+        <label for="idOfer">Selecciona una oferta laboral:</label>
+        <select name="idOfer" onchange="this.form.submit()">
+            {% for ofer in ofertas %}
+                <option value="{{ ofer.idOfer }}" {% if ofer.idOfer == idOfer %}selected{% endif %}>
+                    {{ ofer.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+
+    {% if oferta %}
+        <h1>Etiquetas para "{{ oferta.nombre }}"</h1>
+        
+        <h3>Educación</h3>
+        {{ tabla_edu|safe }}
+        <h3>Tecnologías</h3>
+        {{ tabla_tec|safe }}
+        <h3>Habilidades</h3>
+        {{ tabla_hab|safe }}
+    {% else %}
+        <p>No hay ofertas laborales disponibles.</p>
+    {% endif %}
     
     <!--<hr class="my-4">-->
     <h3 style="text-align: center; display: block; margin-left: auto; margin-right: auto;">Asignar nueva importancia (de 0 a 3)</h3>

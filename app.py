@@ -15,9 +15,9 @@ import io
 import base64
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
-from flask import Flask
 from flask_mail import Mail, Message
 from functools import wraps
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "MiraQueSéQueMeVes"  # Necesario para sesiones
@@ -37,6 +37,7 @@ email = Mail(app)
 
 
 # Base de datos
+    
 class Candidato(db.Model):
     id = db.Column(db.String, primary_key=True)  # Usamos el correo como ID único
     nombre = db.Column(db.String(100), nullable=False)
@@ -48,26 +49,79 @@ class Candidato(db.Model):
     idedu = db.Column(db.Integer, db.ForeignKey('educacion.idedu'))
     idtec = db.Column(db.Integer, db.ForeignKey('tecnologia.idtec'))
     idhab = db.Column(db.Integer, db.ForeignKey('habilidad.idhab'))
+    idOfer = db.Column(db.Integer, db.ForeignKey('oferta_laboral.idOfer'))  # Nueva relación con oferta
     aptitud = db.Column(db.Boolean, nullable=True)
     puntaje = db.Column(db.Integer, nullable=False, default=0)
+
+    oferta = db.relationship('OfertaLaboral', back_populates='candidatos')  # Relación bidireccional
+
+    
+class OfertaLaboral(db.Model):
+    __tablename__ = 'oferta_laboral'
+    
+    idOfer = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column(db.String(200), nullable=False, unique=True)
+    fecha_cierre = db.Column(db.DateTime, nullable=False)
+    max_candidatos = db.Column(db.Integer, nullable=False)
+
+    # Relaciones
+    candidatos = db.relationship('Candidato', back_populates='oferta', lazy=True)
+    educaciones = db.relationship('OfertaEducacion', back_populates='oferta', lazy=True)
+    tecnologias = db.relationship('OfertaTecnologia', back_populates='oferta', lazy=True)
+    habilidades = db.relationship('OfertaHabilidad', back_populates='oferta', lazy=True)
+
+# Tablas intermedias para asociar cada oferta con sus etiquetas
+
+class OfertaEducacion(db.Model):
+    __tablename__ = 'oferta_educacion'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    idOfer = db.Column(db.Integer, db.ForeignKey('oferta_laboral.idOfer'))
+    idEdu = db.Column(db.Integer, db.ForeignKey('educacion.idedu'))
+    importancia = db.Column(db.Integer, nullable=False)
+
+    oferta = db.relationship('OfertaLaboral', back_populates='educaciones')
+    educacion = db.relationship('Educacion')
+
+class OfertaTecnologia(db.Model):
+    __tablename__ = 'oferta_tecnologia'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    idOfer = db.Column(db.Integer, db.ForeignKey('oferta_laboral.idOfer'))
+    idTec = db.Column(db.Integer, db.ForeignKey('tecnologia.idtec'))
+    importancia = db.Column(db.Integer, nullable=False)
+
+    oferta = db.relationship('OfertaLaboral', back_populates='tecnologias')
+    tecnologia = db.relationship('Tecnologia')
+
+class OfertaHabilidad(db.Model):
+    __tablename__ = 'oferta_habilidad'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    idOfer = db.Column(db.Integer, db.ForeignKey('oferta_laboral.idOfer'))
+    idHab = db.Column(db.Integer, db.ForeignKey('habilidad.idhab'))
+    importancia = db.Column(db.Integer, nullable=False)
+
+    oferta = db.relationship('OfertaLaboral', back_populates='habilidades')
+    habilidad = db.relationship('Habilidad')
 
 class Educacion(db.Model):
     __tablename__ = 'educacion'
     idedu = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False, unique=True)
-    importancia = db.Column(db.Integer, nullable=False)
+
 
 class Tecnologia(db.Model):
     __tablename__ = 'tecnologia'
     idtec = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False, unique=True)
-    importancia = db.Column(db.Integer, nullable=False)
+
 
 class Habilidad(db.Model):
     __tablename__ = 'habilidad'
     idhab = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False, unique=True)
-    importancia = db.Column(db.Integer, nullable=False)
+
     
 class Usuario(db.Model):
     __tablename__ = 'usuario'
@@ -88,57 +142,54 @@ def get_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-"""
+'''
 # Crear la base de datos y agregar usuarios ficticios si no existen
-if not os.path.exists("erp_rrhh.db"):
-    with app.app_context():
-        db.create_all()
-        # Agregar usuarios ficticios
-        # Cargar los encoders
-        encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
-        encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
-        encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
+#if not os.path.exists("erp_rrhh.db"):
+with app.app_context():
+    db.create_all()
+    # Agregar usuarios ficticios
+    # Cargar los encoders
+    encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
+    encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
+    encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
 
-        # Insertar las clases en la tabla de 'Educacion'
-        for idx, clase in enumerate(encoder_educacion.classes_):
-            nueva_educacion = Educacion(
-                idedu=idx,  # El índice asignado por el encoder será el ID
-                nombre=clase,
-                importancia=0  # Ajustar según tu lógica
-            )
-            db.session.merge(nueva_educacion)  # Merge para evitar duplicados
+    # Insertar las clases en la tabla intermedia de 'OfertaEducacion'
+    for idx, clase in enumerate(encoder_educacion.classes_):
+        nueva_educacion = Educacion(
+            idedu=idx,  # El índice asignado por el encoder será el ID
+            nombre=clase
+        )
+        db.session.merge(nueva_educacion)  # Merge para evitar duplicados
 
-        # Insertar las clases en la tabla de 'Tecnologia'
-        for idx, clase in enumerate(encoder_tecnologias.classes_):
-            nueva_tecnologia = Tecnologia(
-                idtec=idx,
-                nombre=clase,
-                importancia=0  # Ajustar según tu lógica
-            )
-            db.session.merge(nueva_tecnologia)
+    # Insertar las clases en la tabla intermedia de 'OfertaTecnologia'
+    for idx, clase in enumerate(encoder_tecnologias.classes_):
+        nueva_tecnologia = Tecnologia(
+            idtec=idx,
+            nombre=clase
+        )
+        db.session.merge(nueva_tecnologia)
 
-        # Insertar las clases en la tabla de 'Habilidad'
-        for idx, clase in enumerate(encoder_habilidades.classes_):
-            nueva_habilidad = Habilidad(
-                idhab=idx,
-                nombre=clase,
-                importancia=0  # Ajustar según tu lógica
-            )
-            db.session.merge(nueva_habilidad)
+    # Insertar las clases en la tabla intermedia de 'OfertaHabilidad'
+    for idx, clase in enumerate(encoder_habilidades.classes_):
+        nueva_habilidad = Habilidad(
+            idhab=idx,
+            nombre=clase
+        )
+        db.session.merge(nueva_habilidad)
 
-        # Confirmar los cambios
-        db.session.commit()
-        print("Clases cargadas automáticamente en la base de datos.")
-        usuario_admin = Usuario(username="Fernando", password=generate_password_hash("admin123", method="pbkdf2:sha256"), type="Admin_RRHH")
-        usuario_supervisor = Usuario(username="Diego", password=generate_password_hash("supervisor123", method="pbkdf2:sha256"), type="Supervisor")
-        usuario_analista = Usuario(username="Guada", password=generate_password_hash("analista123", method="pbkdf2:sha256"), type="Analista_Datos")
-        
-        db.session.add(usuario_admin)
-        db.session.add(usuario_supervisor)
-        db.session.add(usuario_analista)
-        db.session.commit()
-        print("Usuarios ficticios creados con éxito.")
-"""
+    # Confirmar los cambios
+    db.session.commit()
+    print("Clases cargadas automáticamente en la base de datos.")
+    usuario_admin = Usuario(username="Fernando", password=generate_password_hash("admin123", method="pbkdf2:sha256"), type="Admin_RRHH")
+    usuario_supervisor = Usuario(username="Diego", password=generate_password_hash("supervisor123", method="pbkdf2:sha256"), type="Supervisor")
+    usuario_analista = Usuario(username="Guada", password=generate_password_hash("analista123", method="pbkdf2:sha256"), type="Analista_Datos")
+    
+    db.session.add(usuario_admin)
+    db.session.add(usuario_supervisor)
+    db.session.add(usuario_analista)
+    db.session.commit()
+    print("Usuarios ficticios creados con éxito.")
+'''
 
 
 # FUNCIONES
@@ -154,6 +205,109 @@ def obtener_correos_aptos():
 def obtener_correos_noaptos():
     candidatos_no_aptos = Candidato.query.filter_by(aptitud=False).all()
     return [c.mail for c in candidatos_no_aptos if c.mail]
+
+def crear_oferta(nombre, fecha_cierre, max_candidatos):
+    nueva_oferta = OfertaLaboral(
+        nombre=nombre,
+        fecha_cierre=fecha_cierre,
+        max_candidatos=max_candidatos
+    )
+    db.session.add(nueva_oferta)
+    db.session.commit()
+
+    # 🔹 Cargar encoders y generar etiquetas
+    encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
+    encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
+    encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
+
+    # Asignar etiquetas específicas a la oferta
+    for idx, clase in enumerate(encoder_educacion.classes_):
+        nueva_relacion = OfertaEducacion(idOfer=nueva_oferta.idOfer, idEdu=idx, importancia=0)
+        db.session.add(nueva_relacion)
+
+    for idx, clase in enumerate(encoder_tecnologias.classes_):
+        nueva_relacion = OfertaTecnologia(idOfer=nueva_oferta.idOfer, idTec=idx, importancia=0)
+        db.session.add(nueva_relacion)
+
+    for idx, clase in enumerate(encoder_habilidades.classes_):
+        nueva_relacion = OfertaHabilidad(idOfer=nueva_oferta.idOfer, idHab=idx, importancia=0)
+        db.session.add(nueva_relacion)
+
+    db.session.commit()
+    print(f"Oferta '{nombre}' creada con etiquetas únicas asociadas 🚀")
+    
+def login_required(roles=None):
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if 'username' not in session:
+                return redirect(url_for('login'))
+            if roles and session.get('type') not in roles:
+                return "Acceso no autorizado"
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
+    
+    
+# Página principal RRHH
+@app.route('/')
+def index():
+    return redirect('/login')
+
+
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = Usuario.query.filter_by(username=username).first()
+        
+        print("Ruta absoluta de la base de datos:", os.path.abspath("erp_rrhh.db"))
+        
+        if user and check_password_hash(user.password, password):
+            session['username'] = user.username
+            session['type'] = user.type
+            # Redirige según el rol usando url_for
+            if user.type == "Admin_RRHH":
+                return redirect(url_for('admin_rrhh'))
+            elif user.type == "Supervisor":
+                return redirect(url_for('supervisor'))
+            elif user.type == "Analista_Datos":
+                return redirect(url_for('analista'))
+            else:
+                return "Rol no reconocido"
+        else:
+            return render_template("auth/login.html")
+    return render_template("auth/login.html")
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
+
+
+@app.route('/admin_rrhh')
+@login_required(roles=["Admin_RRHH"])
+def admin_rrhh():
+    #if 'username' in session and session.get('type') == "Admin_RRHH":
+        #return f"Bienvenido {session.get('username')} al panel de Administrador de RRHH."
+    return redirect('/predecir')
+
+
+@app.route('/supervisor')
+def supervisor():
+    if 'username' in session and session.get('type') == "Supervisor":
+        return f"Bienvenido {session.get('username')} al panel de Supervisor."
+    return redirect('/login')
+
+
+@app.route('/analista')
+def analista():
+    if 'username' in session and session.get('type') == "Analista_Datos":
+        return f"Bienvenido {session.get('username')} al panel de Analista de Datos."
+    return redirect('/login')
+
 
 
 @app.route('/enviar_correos')
@@ -194,17 +348,7 @@ except Exception as e:
     print("Error al cargar los encoders:", e)
     raise e
 
-def login_required(roles=None):
-    def decorator(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            if 'username' not in session:
-                return redirect(url_for('login'))
-            if roles and session.get('type') not in roles:
-                return "Acceso no autorizado"
-            return f(*args, **kwargs)
-        return wrapped
-    return decorator
+
 
 
 # Página principal postulacion
@@ -303,64 +447,25 @@ def postulacion():
     )
 
 
-# Página principal RRHH
-@app.route('/')
-def index():
-    return redirect('/login')
 
-
-@app.route("/login", methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = Usuario.query.filter_by(username=username).first()
-        
-        print("Ruta absoluta de la base de datos:", os.path.abspath("erp_rrhh.db"))
-        
-        if user and check_password_hash(user.password, password):
-            session['username'] = user.username
-            session['type'] = user.type
-            # Redirige según el rol usando url_for
-            if user.type == "Admin_RRHH":
-                return redirect(url_for('admin_rrhh'))
-            elif user.type == "Supervisor":
-                return redirect(url_for('supervisor'))
-            elif user.type == "Analista_Datos":
-                return redirect(url_for('analista'))
-            else:
-                return "Rol no reconocido"
-        else:
-            return render_template("auth/login.html")
-    return render_template("auth/login.html")
-
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect('/login')
-
-
-@app.route('/admin_rrhh')
+@app.route('/crear_oferta', methods=['GET', 'POST'])
 @login_required(roles=["Admin_RRHH"])
-def admin_rrhh():
-    #if 'username' in session and session.get('type') == "Admin_RRHH":
-        #return f"Bienvenido {session.get('username')} al panel de Administrador de RRHH."
-    return redirect('/predecir')
+def crear_oferta():
+    if request.method == "POST":
+        nombre = request.form.get("nombre")
+        fecha_cierre_str = request.form.get("fecha_cierre")
+        max_candidatos = int(request.form.get("max_candidatos"))
+        
+        fecha_cierre = datetime.strptime(fecha_cierre_str, "%Y-%m-%d")
 
+        nueva_oferta = OfertaLaboral(nombre=nombre, fecha_cierre=fecha_cierre, max_candidatos=max_candidatos)
+        db.session.add(nueva_oferta)
+        db.session.commit()
 
-@app.route('/supervisor')
-def supervisor():
-    if 'username' in session and session.get('type') == "Supervisor":
-        return f"Bienvenido {session.get('username')} al panel de Supervisor."
-    return redirect('/login')
+        flash(f"Oferta '{nombre}' creada con éxito 🎉")
+        return redirect("/crear_oferta")
 
-
-@app.route('/analista')
-def analista():
-    if 'username' in session and session.get('type') == "Analista_Datos":
-        return f"Bienvenido {session.get('username')} al panel de Analista de Datos."
-    return redirect('/login')
+    return render_template("crear_oferta.html")  # Renderiza el formulario en GET
 
 
 # Página de estadísticas
@@ -629,20 +734,21 @@ def calcular_puntaje(candidato):
 
     puntaje += candidato.experiencia * 2
 
-    if candidato.idedu:
-        edu = Educacion.query.get(candidato.idedu)
-        if edu:
-            puntaje += edu.importancia * 3
+    if candidato.idOfer:  # Asegurarse de que el candidato esté vinculado a una oferta laboral
+        # Obtener la importancia desde OfertaEducacion
+        edu_rel = OfertaEducacion.query.filter_by(idOfer=candidato.idOfer, idEdu=candidato.idedu).first()
+        if edu_rel:
+            puntaje += edu_rel.importancia * 3
 
-    if candidato.idtec:
-        tec = Tecnologia.query.get(candidato.idtec)
-        if tec:
-            puntaje += tec.importancia * 5
+        # Obtener la importancia desde OfertaTecnologia
+        tec_rel = OfertaTecnologia.query.filter_by(idOfer=candidato.idOfer, idTec=candidato.idtec).first()
+        if tec_rel:
+            puntaje += tec_rel.importancia * 5
 
-    if candidato.idhab:
-        hab = Habilidad.query.get(candidato.idhab)
-        if hab:
-            puntaje += hab.importancia * 2
+        # Obtener la importancia desde OfertaHabilidad
+        hab_rel = OfertaHabilidad.query.filter_by(idOfer=candidato.idOfer, idHab=candidato.idhab).first()
+        if hab_rel:
+            puntaje += hab_rel.importancia * 2
 
     return puntaje
 
@@ -650,11 +756,13 @@ def calcular_puntaje(candidato):
 @app.route("/cargarCV", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])
 def cargarCV():
-    #es_admin = "username" in session and session.get("type") == "Admin_RRHH"
+    # Obtener todas las ofertas laborales disponibles
+    opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.all()]
     opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
     opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
     opciones_habilidades = [habilidad.nombre for habilidad in Habilidad.query.all()]
 
+    session["opciones_ofertas"] = opciones_ofertas
     session["opciones_educacion"] = opciones_educacion
     session["opciones_tecnologias"] = opciones_tecnologias
     session["opciones_habilidades"] = opciones_habilidades
@@ -664,28 +772,17 @@ def cargarCV():
         nombre = request.form["nombre"]
         apellido = request.form["apellido"]
         email = request.form["email"]
-        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not re.match(email_regex, email):
-            flash("Por favor ingresa un email válido.<br>Ejemplo: JuanPerez@gmail.com")
-            return redirect("/cargarCV")
         telefono = request.form["telefono"]
-        if not telefono.isdigit() or len(telefono) < 8 or len(telefono) > 10:
-            flash("El teléfono debe contener solo números y tener entre 8 y 10 cifras.")
-            return redirect("/cargarCV")
         ubicacion = request.form["ubicacion"]
-        PROVINCIAS_ARG = [
-        "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
-        "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
-        "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
-        "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
-        "Tierra del Fuego", "Tucumán"]
-        if ubicacion not in PROVINCIAS_ARG:
-            flash("Ubicación no válida. Selecciona una provincia de Argentina.")
-            return redirect("/cargarCV")
         experiencia = int(request.form["experiencia"])
         educacion = request.form["educacion"]
         tecnologias = request.form["tecnologias"]
         habilidades = request.form["habilidades"]
+        idOfer = request.form.get("idOfer")  # Nueva variable para oferta laboral
+
+        if not idOfer:
+            flash("Debes seleccionar una oferta laboral.")
+            return redirect("/cargarCV")
 
         try:
             # Buscar el ID correspondiente en las tablas
@@ -701,7 +798,7 @@ def cargarCV():
             idtec = tecnologia_obj.idtec
             idhab = habilidad_obj.idhab
 
-            # Crear y guardar el candidato
+            # Crear y guardar el candidato con la oferta laboral seleccionada
             nuevo_candidato_db = Candidato(
                 id=email,
                 nombre=nombre,
@@ -713,77 +810,95 @@ def cargarCV():
                 idedu=idedu,
                 idtec=idtec,
                 idhab=idhab,
+                idOfer=idOfer,  # Asociación con la oferta laboral
                 aptitud=None
             )
             db.session.add(nuevo_candidato_db)
             db.session.commit()
-            flash(f"Candidato {nombre} guardado correctamente en la base de datos.")
+            flash(f"Candidato {nombre} guardado correctamente y asociado a la oferta laboral '{OfertaLaboral.query.get(idOfer).nombre}'.")
         except Exception as e:
             flash(f"Error al guardar el candidato: {e}")
             return redirect("/cargarCV")
 
     return render_template(
         "cargarCV.html",
-        #es_admin=es_admin,
+        opciones_ofertas=session["opciones_ofertas"],  # Pasamos ofertas al HTML
         opciones_educacion=session["opciones_educacion"],
         opciones_tecnologias=session["opciones_tecnologias"],
         opciones_habilidades=session["opciones_habilidades"]
     )
 
 
-@app.route("/etiquetas")
+@app.route("/etiquetas", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])
 def mostrar_etiquetas():
-    educaciones = Educacion.query.all()
-    tecnologias = Tecnologia.query.all()
-    habilidades = Habilidad.query.all()
+    # Obtener todas las ofertas laborales
+    ofertas = OfertaLaboral.query.all()
+    
+    # Si el usuario seleccionó una oferta, obtenemos su ID
+    idOfer = request.form.get("idOfer") if request.method == "POST" else ofertas[0].idOfer if ofertas else None
 
-    df_edu = pd.DataFrame([{"Nombre": e.nombre, "Valor": e.importancia} for e in educaciones])
-    df_tec = pd.DataFrame([{"Nombre": t.nombre, "Valor": t.importancia} for t in tecnologias])
-    df_hab = pd.DataFrame([{"Nombre": h.nombre, "Valor": h.importancia} for h in habilidades])
+    # Si hay una oferta seleccionada, obtenemos sus etiquetas
+    if idOfer:
+        oferta = OfertaLaboral.query.get(idOfer)
+        educaciones = OfertaEducacion.query.filter_by(idOfer=idOfer).all()
+        tecnologias = OfertaTecnologia.query.filter_by(idOfer=idOfer).all()
+        habilidades = OfertaHabilidad.query.filter_by(idOfer=idOfer).all()
 
-    tabla_edu = df_edu.to_html(classes="table table-bordered", index=False)
-    tabla_tec = df_tec.to_html(classes="table table-bordered", index=False)
-    tabla_hab = df_hab.to_html(classes="table table-bordered", index=False)
+        df_edu = pd.DataFrame([{"Nombre": e.educacion.nombre, "Valor": e.importancia} for e in educaciones])
+        df_tec = pd.DataFrame([{"Nombre": t.tecnologia.nombre, "Valor": t.importancia} for t in tecnologias])
+        df_hab = pd.DataFrame([{"Nombre": h.habilidad.nombre, "Valor": h.importancia} for h in habilidades])
+
+        tabla_edu = df_edu.to_html(classes="table table-bordered", index=False)
+        tabla_tec = df_tec.to_html(classes="table table-bordered", index=False)
+        tabla_hab = df_hab.to_html(classes="table table-bordered", index=False)
+    else:
+        oferta, tabla_edu, tabla_tec, tabla_hab = None, "", "", ""
 
     return render_template("etiquetas.html",
+                           ofertas=ofertas,
+                           oferta=oferta,
+                           idOfer=idOfer,
                            tabla_edu=tabla_edu,
                            tabla_tec=tabla_tec,
-                           tabla_hab=tabla_hab,
-                           educaciones=educaciones,
-                           habilidades=habilidades,
-                           tecnologias=tecnologias)
+                           tabla_hab=tabla_hab)
 
 
-@app.route("/asignar_valores", methods=["POST"])
+@app.route("/asignar_valores/<int:idOfer>", methods=["POST"])
 @login_required(roles=["Admin_RRHH"])
-def asignar_valores():
+def asignar_valores(idOfer):
+    oferta = OfertaLaboral.query.get(idOfer)
+    if not oferta:
+        flash("Oferta no encontrada", "error")
+        return redirect(url_for("dashboard"))
+
     # Educación
     educacion_id = request.form.get("educacion_id")
     valor_educacion = request.form.get("valor_educacion")
-    if valor_educacion != "":
-        edu = Educacion.query.get(int(educacion_id))
-        if edu:
-            edu.importancia = int(valor_educacion)
+    if valor_educacion:
+        edu_rel = OfertaEducacion.query.filter_by(idOfer=idOfer, idEdu=educacion_id).first()
+        if edu_rel:
+            edu_rel.importancia = int(valor_educacion)
 
     # Tecnología
     tecnologia_id = request.form.get("tecnologia_id")
     valor_tecnologia = request.form.get("valor_tecnologia")
-    if valor_tecnologia != "":
-        tec = Tecnologia.query.get(int(tecnologia_id))
-        if tec:
-            tec.importancia = int(valor_tecnologia)
+    if valor_tecnologia:
+        tec_rel = OfertaTecnologia.query.filter_by(idOfer=idOfer, idTec=tecnologia_id).first()
+        if tec_rel:
+            tec_rel.importancia = int(valor_tecnologia)
 
     # Habilidad
     habilidad_id = request.form.get("habilidad_id")
     valor_habilidad = request.form.get("valor_habilidad")
-    if valor_habilidad != "":
-        hab = Habilidad.query.get(int(habilidad_id))
-        if hab:
-            hab.importancia = int(valor_habilidad)
+    if valor_habilidad:
+        hab_rel = OfertaHabilidad.query.filter_by(idOfer=idOfer, idHab=habilidad_id).first()
+        if hab_rel:
+            hab_rel.importancia = int(valor_habilidad)
 
     db.session.commit()
-    return redirect(url_for("mostrar_etiquetas"))
+    flash("Importancia actualizada correctamente", "success")
+    return redirect(url_for("mostrar_etiquetas", idOfer=idOfer))
 
 
 if __name__ == "__main__":

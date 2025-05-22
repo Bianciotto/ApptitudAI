@@ -20,6 +20,14 @@
 <body>
     <h1>Carga el CV del candidato</h1>
     <form method="post" action="/cargarCV">
+
+        <label for="idOfer">Selecciona una oferta laboral:</label>
+        <select name="idOfer" required>
+            <option value="">-- Selecciona una oferta --</option>
+            {% for oferta in opciones_ofertas %}
+                <option value="{{ oferta.idOfer }}">{{ oferta.nombre }}</option>
+            {% endfor %}
+        </select>
         <label for="nombre">Nombre</label>
         <input type="text" name="nombre" id="nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' ]{2,20}" title="Debe tener entre 2 y 20 letras, puede incluir espacios o apóstrofes" required>
         
