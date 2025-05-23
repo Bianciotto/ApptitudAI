@@ -1,7 +1,8 @@
 import pytest
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from app import app as app_local, db, Educacion, Tecnologia, Habilidad
+from datetime import datetime
+from app import app as app_local, db, Educacion, Tecnologia, Habilidad, OfertaLaboral, OfertaEducacion, OfertaTecnologia, OfertaHabilidad
 
 @pytest.fixture
 def app():
@@ -17,38 +18,55 @@ def setup_db(app):
     with app.app_context():
         db.create_all()
 
-        db.session.add(Educacion(nombre = 'Secundario', importancia = 1))
-        db.session.add(Tecnologia(nombre = 'Java', importancia = 1))
-        db.session.add(Habilidad(nombre = 'Liderazgo', importancia = 1))
-
+        edu = Educacion(nombre='Secundario')
+        tec = Tecnologia(nombre='Java')
+        hab = Habilidad(nombre='Liderazgo')
+        db.session.add_all([edu, tec, hab])
         db.session.commit()
+
+        oferta = OfertaLaboral(nombre="FrontEnd Developer JR", fecha_cierre=datetime.now(), max_candidatos=1)
+        db.session.add(oferta)
+        db.session.commit()
+
+        db.session.add(OfertaEducacion(idOfer=oferta.idOfer, idEdu=edu.idedu, importancia=1))
+        db.session.add(OfertaTecnologia(idOfer=oferta.idOfer, idTec=tec.idtec, importancia=1))
+        db.session.add(OfertaHabilidad(idOfer=oferta.idOfer, idHab=hab.idhab, importancia=1))
+        db.session.commit()
+
         yield db
 
         db.session.remove()
         db.drop_all()
 
-def test_cambiar_peso_etiqueta_educacion(app, setup_db, importancia = 3):
+#Test que prueba el cambio de importancia en la etiqueta educacion
+def test_cambiar_importancia_oferta_educacion(app, setup_db):
     with app.app_context():
-        edu = Educacion.query.filter_by(nombre = "Secundario").first()
-        edu.importancia = importancia
+        oferta = OfertaLaboral.query.first()
+        edu = Educacion.query.filter_by(nombre="Secundario").first()
+        rel = OfertaEducacion.query.filter_by(idOfer=oferta.idOfer, idEdu=edu.idedu).first()
+        rel.importancia = 3
         db.session.commit()
-        edu_actualizada = Educacion.query.filter_by(nombre = "Secundario").first()
-        assert edu_actualizada.importancia == 3
+        rel_actualizada = OfertaEducacion.query.filter_by(idOfer=oferta.idOfer, idEdu=edu.idedu).first()
+        assert rel_actualizada.importancia == 3
 
-
-def test_cambiar_peso_etiqueta_tecnologia(app, setup_db, importancia = 3):
+#Test que prueba el cambio de importancia en la etiqueta tecnologia
+def test_cambiar_importancia_oferta_tecnologia(app, setup_db):
     with app.app_context():
-        tec = Tecnologia.query.filter_by(nombre = "Java").first()
-        tec.importancia = importancia
+        oferta = OfertaLaboral.query.first()
+        tec = Tecnologia.query.filter_by(nombre="Java").first()
+        rel = OfertaTecnologia.query.filter_by(idOfer=oferta.idOfer, idTec=tec.idtec).first()
+        rel.importancia = 3
         db.session.commit()
-        tec_actualizada = Tecnologia.query.filter_by(nombre = "Java").first()
-        assert tec_actualizada.importancia == 3
+        rel_actualizada = OfertaTecnologia.query.filter_by(idOfer=oferta.idOfer, idTec=tec.idtec).first()
+        assert rel_actualizada.importancia == 3
 
-
-def test_cambiar_peso_etiqueta_habilidad(app, setup_db, importancia = 3):
+#Test que prueba el cambio de importancia en la etiqueta habilidad
+def test_cambiar_importancia_oferta_habilidad(app, setup_db):
     with app.app_context():
-        hab = Habilidad.query.filter_by(nombre = "Liderazgo").first()
-        hab.importancia = importancia
+        oferta = OfertaLaboral.query.first()
+        hab = Habilidad.query.filter_by(nombre="Liderazgo").first()
+        rel = OfertaHabilidad.query.filter_by(idOfer=oferta.idOfer, idHab=hab.idhab).first()
+        rel.importancia = 3
         db.session.commit()
-        hab_actualizada = Habilidad.query.filter_by(nombre = "Liderazgo").first()
-        assert hab_actualizada.importancia == 3
+        rel_actualizada = OfertaHabilidad.query.filter_by(idOfer=oferta.idOfer, idHab=hab.idhab).first()
+        assert rel_actualizada.importancia == 3

@@ -1,5 +1,5 @@
 import pytest
-from app import app as appLocal, db, Educacion, Tecnologia, Habilidad
+from app import app as appLocal, db, Educacion, Tecnologia, Habilidad,OfertaEducacion,OfertaLaboral,OfertaTecnologia,OfertaHabilidad
 
 @pytest.fixture
 def client():
@@ -11,33 +11,41 @@ def client():
 
 #Test que prueba que las etiquetas se actualizen con los datos permitidos
 @pytest.mark.parametrize(
-        "importancia",
-        [
-            (0),
-            (1),
-            (2),
-            (3)
-        ]
+    "importancia",
+    [
+        (0),
+        (1),
+        (2),
+        (3)
+    ]
 )
 def test_actualizacion_importancia(client, importancia):
     with appLocal.app_context():
+        oferta = db.session.query(OfertaLaboral).first()
+        idOfer = oferta.idOfer
+
         edu = db.session.execute(db.select(Educacion).filter_by(nombre="Secundario")).scalar_one()
         id_edu = edu.idedu
-        valor_edu_original = edu.importancia
 
-        tec = db.session.execute(db.select(Tecnologia).filter_by(nombre ="Java")).scalar_one()
+        tec = db.session.execute(db.select(Tecnologia).filter_by(nombre="Java")).scalar_one()
         id_tec = tec.idtec
-        valor_tec_original = tec.importancia
 
-        hab = db.session.execute(db.select(Habilidad).filter_by(nombre ="Liderazgo")).scalar_one()
+        hab = db.session.execute(db.select(Habilidad).filter_by(nombre="Liderazgo")).scalar_one()
         id_hab = hab.idhab
-        valor_hab_original = hab.importancia
+
+        # Guardar valores originales
+        edu_rel = OfertaEducacion.query.filter_by(idOfer=idOfer, idEdu=id_edu).first()
+        tec_rel = OfertaTecnologia.query.filter_by(idOfer=idOfer, idTec=id_tec).first()
+        hab_rel = OfertaHabilidad.query.filter_by(idOfer=idOfer, idHab=id_hab).first()
+        valor_edu_original = edu_rel.importancia
+        valor_tec_original = tec_rel.importancia
+        valor_hab_original = hab_rel.importancia
 
     with client.session_transaction() as sess:
         sess["username"] = "Fernando"
         sess["type"] = "Admin_RRHH"
 
-    respuesta = client.post("/asignar_valores", data={
+    respuesta = client.post(f"/asignar_valores/{idOfer}", data={
         "educacion_id": id_edu,
         "valor_educacion": importancia,
         "tecnologia_id": id_tec,
@@ -49,18 +57,18 @@ def test_actualizacion_importancia(client, importancia):
     assert respuesta.status_code == 200
 
     with appLocal.app_context():
-        edu_actualizada = db.session.get(Educacion, id_edu)
-        assert edu_actualizada.importancia == importancia
-        edu_actualizada.importancia = valor_edu_original
+        edu_rel = OfertaEducacion.query.filter_by(idOfer=idOfer, idEdu=id_edu).first()
+        assert edu_rel.importancia == importancia
+        edu_rel.importancia = valor_edu_original
 
-        tec_actualizada = db.session.get(Tecnologia, id_tec)
-        assert tec_actualizada.importancia == importancia
-        tec_actualizada.importancia = valor_tec_original
+        tec_rel = OfertaTecnologia.query.filter_by(idOfer=idOfer, idTec=id_tec).first()
+        assert tec_rel.importancia == importancia
+        tec_rel.importancia = valor_tec_original
 
-        hab_actualizada = db.session.get(Habilidad, id_hab)
-        assert hab_actualizada.importancia == importancia
-        hab_actualizada.importancia = valor_hab_original
-        
+        hab_rel = OfertaHabilidad.query.filter_by(idOfer=idOfer, idHab=id_hab).first()
+        assert hab_rel.importancia == importancia
+        hab_rel.importancia = valor_hab_original
+
         db.session.commit()
 
 #Test que prueba que no se actualizen las etiquetas con datos no validos (❌Fallando❌)

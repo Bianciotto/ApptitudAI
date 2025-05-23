@@ -38,6 +38,7 @@ def client_Candidatos():
     ]
 )
 def test_valid_agregar_postulacion(client_Candidatos: FlaskClient, nombre: Literal['Lucas'] | Literal['Jose'], apellido: Literal['Abalos'] | Literal['Perez'], email: Literal['correoDePueba123@gmail.com'] | Literal['correoDePueba4123@gmail.com'], telefono: Literal['1135356456'] | Literal['1343567856'], ubicacion: Literal['Buenos Aires'], experiencia: Literal['2'], educacion: Literal['Secundario'], tecnologias: Literal['Python'], habilidades: Literal['Trabajo en equipo']):
+    client_Candidatos.get('/postulacionIT')
     response = client_Candidatos.post('/postulacion', data={
         'nombre': nombre,
         'apellido': apellido,
@@ -71,6 +72,8 @@ def test_valid_agregar_postulacion(client_Candidatos: FlaskClient, nombre: Liter
      ]
 )
 def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre: Literal['Martin'] | Literal['Agustin'], apellido: Literal['Gonzales'] | Literal['Martinez'], email: Literal['tincho462@gmail.com'] | Literal['agusmartinez@hotmail.com'], telefono: Literal['1125432354'] | Literal['1123432345'], ubicacion: Literal['Buenos Aires'] | Literal['Formosa'], experiencia: Literal['6'] | Literal['3'], educacion: Literal['Universitario'] | Literal['Postgrado'], tecnologias: Literal['Java'] | Literal['SQL'], habilidades: Literal['Trabajo en equipo'] | Literal['Liderazgo']):
+    client_Candidatos.get('/postulacionIT')
+
     data = {
         'nombre': nombre,
         'apellido': apellido,
@@ -82,7 +85,7 @@ def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre: Literal['
         'tecnologias': tecnologias,        
         'habilidades': habilidades
     }
-    
+
     response1 = client_Candidatos.post('/postulacion', data=data)
     assert response1.status_code in [200,302]
 
