@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métricas por oferta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='StylesIndex.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<header>
+    <div class="logo">
+        <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Logo">
+    </div>
+    <div class="nav">
+        <a href="{{ url_for('predecir') }}">Inicio</a>
+    </div>
+</header>
+
+<body>
+    <h3>Métricas por oferta laboral</h3>
+
+    <select id="ofertaSelect" style="background-color: #3815b8; color: white;">
+        <option style="background-color: #3815b8; color: white;" value="">-- Seleccionar oferta --</option>
+        {% for oferta in ofertas %}
+            <option style="background-color: #3815b8; color: white;" value="{{ oferta.idOfer }}">
+                {{ oferta.nombre }}
+            </option>
+        {% endfor %}
+    </select>
+    
+    <div style="width: 80%; margin: 0 auto;">
+        <canvas id="grafico" width="400" height="200"></canvas>
+    </div>
+
+    <script>
+        const select = document.getElementById("ofertaSelect");
+        const ctx = document.getElementById("grafico").getContext("2d");
+        let chart = null;
+
+        select.addEventListener("change", () => {
+            const id = select.value;
+            if (!id) return;
+
+            fetch(`/metricas/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (chart) chart.destroy();
+
+                    chart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.etiquetas,
+                            datasets: [{
+                                label: 'Candidatos que cumplen la etiqueta',
+                                data: data.cantidades,
+                                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Cantidad de postulantes que cumplen cada etiqueta',
+                                    font: {
+                                        size: 18
+                                    },
+                                    padding: {
+                                        top: 10,
+                                        bottom: 20
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 20,  // Limita el eje Y a un máximo de 100
+                                    ticks: {
+                                        stepSize: 5  // (Opcional) define de cuánto en cuánto suben los ticks
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+        });
+    </script>
+</body>
+</html>

@@ -18,6 +18,8 @@ import re
 from flask_mail import Mail, Message
 from functools import wraps
 from datetime import datetime
+from flask import jsonify
+
 
 app = Flask(__name__)
 app.secret_key = "MiraQueSéQueMeVes"  # Necesario para sesiones
@@ -728,7 +730,6 @@ def predecir_postulantes_automatica(idOfer):
     db.session.commit()
 
 
-
 def asignar_puntajes_automatica(idOfer):
     candidatos = Candidato.query.filter_by(idOfer=idOfer, aptitud=True).all()
 
@@ -1038,6 +1039,42 @@ def asignar_valores(idOfer):
 
     return mostrar_etiquetas(idOfer)  # 🔹 Recuperamos datos actualizados antes de renderizar
 
+@app.route("/metricas")
+@login_required(roles=["Admin_RRHH"])
+def metricas():
+    ofertas = OfertaLaboral.query.all()
+    return render_template("metricas.html", ofertas=ofertas)
+
+@app.route("/metricas/<int:oferta_id>")
+@login_required(roles=["Admin_RRHH"])
+def obtener_metricas(oferta_id):
+    oferta = OfertaLaboral.query.get_or_404(oferta_id)
+
+    etiquetas = []
+    cantidades = []
+
+    # Educación
+    for edu_rel in oferta.educaciones:
+        etiqueta = edu_rel.educacion.nombre
+        cantidad = Candidato.query.filter_by(idOfer=oferta_id, idedu=edu_rel.idEdu).count()
+        etiquetas.append(f"Edu: {etiqueta}")
+        cantidades.append(cantidad)
+
+    # Tecnología
+    for tec_rel in oferta.tecnologias:
+        etiqueta = tec_rel.tecnologia.nombre
+        cantidad = Candidato.query.filter_by(idOfer=oferta_id, idtec=tec_rel.idTec).count()
+        etiquetas.append(f"Tec: {etiqueta}")
+        cantidades.append(cantidad)
+
+    # Habilidad
+    for hab_rel in oferta.habilidades:
+        etiqueta = hab_rel.habilidad.nombre
+        cantidad = Candidato.query.filter_by(idOfer=oferta_id, idhab=hab_rel.idHab).count()
+        etiquetas.append(f"Hab: {etiqueta}")
+        cantidades.append(cantidad)
+
+    return jsonify({"etiquetas": etiquetas, "cantidades": cantidades})
 
 
 if __name__ == "__main__":
