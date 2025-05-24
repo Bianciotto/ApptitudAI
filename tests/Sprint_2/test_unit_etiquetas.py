@@ -24,7 +24,7 @@ def setup_db(app):
         db.session.add_all([edu, tec, hab])
         db.session.commit()
 
-        oferta = OfertaLaboral(nombre="FrontEnd Developer JR", fecha_cierre=datetime.now(), max_candidatos=1)
+        oferta = OfertaLaboral(nombre="FrontEnd Developer JR", fecha_cierre=datetime.now(), max_candidatos=1, remuneracion="100000", beneficio = "Home Office", estado = 'Activa',  usuario_responsable="Fernando")
         db.session.add(oferta)
         db.session.commit()
 

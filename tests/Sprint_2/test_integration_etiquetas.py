@@ -33,7 +33,6 @@ def test_actualizacion_importancia(client, importancia):
         hab = db.session.execute(db.select(Habilidad).filter_by(nombre="Liderazgo")).scalar_one()
         id_hab = hab.idhab
 
-        # Guardar valores originales
         edu_rel = OfertaEducacion.query.filter_by(idOfer=idOfer, idEdu=id_edu).first()
         tec_rel = OfertaTecnologia.query.filter_by(idOfer=idOfer, idTec=id_tec).first()
         hab_rel = OfertaHabilidad.query.filter_by(idOfer=idOfer, idHab=id_hab).first()
@@ -81,6 +80,8 @@ def test_actualizacion_importancia(client, importancia):
 )
 def test_actualizar_etiquetas_fuera_de_rango(client, importancia):
     with appLocal.app_context():
+        oferta = db.session.query(OfertaLaboral).first()
+        id_oferta = oferta.idOfer
         edu = db.session.execute(db.select(Educacion).filter_by(nombre="Secundario")).scalar_one()
         id_edu = edu.idedu
         
@@ -94,7 +95,7 @@ def test_actualizar_etiquetas_fuera_de_rango(client, importancia):
             sess["username"] = "Fernando"
             sess["type"] = "Admin_RRHH"
        
-    respuesta = client.post("/asignar_valores", data={
+    respuesta = client.post(f"/asignar_valores/{id_oferta}", data={
     "educacion_id": id_edu,
     "valor_educacion": importancia,
     "tecnologia_id": id_tec,
