@@ -27,6 +27,14 @@
         <label for="max_candidatos">Cantidad máxima de candidatos:</label>
         <input type="number" name="max_candidatos" min="1" required>
 
+        <label for="remuneracion">Remuneración:</label>
+        <input type="number" name="remuneracion" placeholder="Ej: 4000" required>
+
+        <label for="beneficio">Beneficio:</label>
+        <input type="text" name="beneficio" placeholder="Ej: Home office" required>
+
+        <p>Usuario responsable: <strong>{{ session.get('username') }}</strong></p>
+
         <button type="submit">Crear Oferta</button>
     </form>
 

@@ -18,9 +18,23 @@
 
 <body>
     <h1>Postulados en la Web</h1>
+
+    <form method="get" action="{{ url_for('postulantes') }}">
+        <label for="idOfer">Filtrar por oferta laboral:</label>
+        <select name="idOfer" onchange="this.form.submit()">
+            <option style="background-color: #3815b8 !important; color: white;" value="">-- Ver todos --</option>
+            {% for oferta in ofertas %}
+                <option style="background-color: #3815b8 !important; color: white;" value="{{ oferta.idOfer }}" {% if oferta.idOfer == idOfer %}selected{% endif %}>
+                    {{ oferta.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+
     <div class="tabla-container">
         {{ tabla|safe }}
     </div>
+    
     <div class="acciones">
         <form method="get" action="{{ url_for('postulantes') }}" style="display:inline;">
             <button type="submit">Actualizar</button>

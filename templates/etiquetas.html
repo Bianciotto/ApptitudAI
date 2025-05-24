@@ -17,16 +17,17 @@
 </header>
 
 <body class="container mt-4">
-    <form method="POST" action="{{ url_for('mostrar_etiquetas') }}">
+    <form method="GET" action="{{ url_for('mostrar_etiquetas') }}">
         <label for="idOfer">Selecciona una oferta laboral:</label>
         <select name="idOfer" onchange="this.form.submit()">
             {% for ofer in ofertas %}
-                <option value="{{ ofer.idOfer }}" {% if ofer.idOfer == idOfer %}selected{% endif %}>
+                <option value="{{ ofer.idOfer }}" {% if ofer.idOfer|string == idOfer|string %}selected{% endif %}>
                     {{ ofer.nombre }}
                 </option>
             {% endfor %}
         </select>
     </form>
+
 
     {% if oferta %}
         <h1>Etiquetas para "{{ oferta.nombre }}"</h1>
