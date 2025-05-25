@@ -48,7 +48,8 @@ def test_valid_agregar_postulacion(client_Candidatos: FlaskClient, nombre: Liter
         'experiencia': experiencia, 
         'educacion': educacion,  
         'tecnologias': tecnologias,        
-        'habilidades': habilidades    
+        'habilidades': habilidades,
+        'puntaje': 0
     })
     assert response.status_code in [200, 302]
 
@@ -83,7 +84,8 @@ def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre: Literal['
         'experiencia': experiencia, 
         'educacion': educacion,  
         'tecnologias': tecnologias,        
-        'habilidades': habilidades
+        'habilidades': habilidades,
+        'puntaje': 0
     }
 
     response1 = client_Candidatos.post('/postulacion', data=data)
@@ -117,7 +119,8 @@ def test_campos_inexistentes(client_Candidatos: FlaskClient,nombre: Literal['Pep
         'experiencia': experiencia, 
         'educacion': educacion,  
         'tecnologias': tecnologias,        
-        'habilidades': habilidades
+        'habilidades': habilidades,
+        'puntaje': 0
     })
 
     assert response.status_code == 400

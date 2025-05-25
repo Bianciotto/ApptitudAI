@@ -132,3 +132,22 @@ def test_campos_vacios(client):
         })
 
         assert response.status_code in [400,422]
+
+# def test_validacion_de_permisos(client):
+#     with appLocal.app_context():
+#         with client.session_transaction() as sess:
+#             sess["username"] = "Diego"
+#             sess["type"] = "Supervisor"
+
+#         response = client.post('/crear_oferta', data = {
+#             'nombre': 'Desarrollador Python SR',
+#             'fecha_cierre': '2025-06-01',
+#             'max_candidatos': '20',
+#             'remuneracion': '100000',
+#             'beneficio': 'Home Office',
+#             'estado': 'Activa',
+#             'usuario_responsable': 'Diego'
+#         })
+
+#         assert response.status_code == 200
+#         assert b"Acceso no autorizado" in response.data
