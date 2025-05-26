@@ -2,6 +2,20 @@
 html {
     background: #5A189A;
 }
+
+#map-container {
+    display: none; /* Ocultar hasta que se seleccione una oferta */
+    width: 40%;
+    margin: 20px auto;
+    text-align: center;
+}
+
+#map {
+    height: 500px;
+    width: 100%;
+    margin-top: 10px;
+}
+
 /*INCOMPLETO*/
 body {
     display: flex;
@@ -151,7 +165,6 @@ h2 {
     text-shadow: -3px 3px 0px #49007e; 
     box-shadow: 0 6px 16px -4px #ffffff;
     transition: all 0.3s ease-in-out;
-    margin-left: 140px;
     margin-top: 60px;
     margin-bottom: 5px;
 }

@@ -1001,7 +1001,6 @@ def mostrar_etiquetas(idOfer=None):
                            habilidades=habilidades)
 
 
-
 @app.route("/asignar_valores/<int:idOfer>", methods=["POST"])
 @login_required(roles=["Admin_RRHH"])
 def asignar_valores(idOfer):
@@ -1039,11 +1038,13 @@ def asignar_valores(idOfer):
 
     return mostrar_etiquetas(idOfer)  # 🔹 Recuperamos datos actualizados antes de renderizar
 
+
 @app.route("/metricas")
 @login_required(roles=["Admin_RRHH"])
 def metricas():
     ofertas = OfertaLaboral.query.all()
     return render_template("metricas.html", ofertas=ofertas)
+
 
 @app.route("/metricas/<int:oferta_id>")
 @login_required(roles=["Admin_RRHH"])
@@ -1052,29 +1053,58 @@ def obtener_metricas(oferta_id):
 
     etiquetas = []
     cantidades = []
+    promedios_experiencia = {}
+    # Datos de ubicación
+    provincias_candidatos = {}
+
+    candidatos = Candidato.query.filter_by(idOfer=oferta_id).all()
+    for c in candidatos:
+        provincia = c.ubicacion  # Suponiendo que `ubicacion` es el nombre de la provincia
+        provincias_candidatos[provincia] = provincias_candidatos.get(provincia, 0) + 1
 
     # Educación
     for edu_rel in oferta.educaciones:
         etiqueta = edu_rel.educacion.nombre
-        cantidad = Candidato.query.filter_by(idOfer=oferta_id, idedu=edu_rel.idEdu).count()
+        candidatos = Candidato.query.filter_by(idOfer=oferta_id, idedu=edu_rel.idEdu).all()
+        promedio_exp = sum(c.experiencia for c in candidatos) / len(candidatos) if candidatos else 0
         etiquetas.append(f"Edu: {etiqueta}")
-        cantidades.append(cantidad)
+        cantidades.append(len(candidatos))
+        promedios_experiencia[etiqueta] = promedio_exp
 
     # Tecnología
     for tec_rel in oferta.tecnologias:
         etiqueta = tec_rel.tecnologia.nombre
-        cantidad = Candidato.query.filter_by(idOfer=oferta_id, idtec=tec_rel.idTec).count()
+        candidatos = Candidato.query.filter_by(idOfer=oferta_id, idtec=tec_rel.idTec).all()
+        promedio_exp = sum(c.experiencia for c in candidatos) / len(candidatos) if candidatos else 0
         etiquetas.append(f"Tec: {etiqueta}")
-        cantidades.append(cantidad)
+        cantidades.append(len(candidatos))
+        promedios_experiencia[etiqueta] = promedio_exp
 
     # Habilidad
     for hab_rel in oferta.habilidades:
         etiqueta = hab_rel.habilidad.nombre
-        cantidad = Candidato.query.filter_by(idOfer=oferta_id, idhab=hab_rel.idHab).count()
+        candidatos = Candidato.query.filter_by(idOfer=oferta_id, idhab=hab_rel.idHab).all()
+        promedio_exp = sum(c.experiencia for c in candidatos) / len(candidatos) if candidatos else 0
         etiquetas.append(f"Hab: {etiqueta}")
-        cantidades.append(cantidad)
+        cantidades.append(len(candidatos))
+        promedios_experiencia[etiqueta] = promedio_exp
 
-    return jsonify({"etiquetas": etiquetas, "cantidades": cantidades})
+    # Datos de candidatos
+    total_candidatos = Candidato.query.filter_by(idOfer=oferta_id).count()
+    aptos = Candidato.query.filter_by(idOfer=oferta_id, aptitud=True).count()
+    no_aptos = Candidato.query.filter_by(idOfer=oferta_id, aptitud=False).count()
+    sin_revisar = Candidato.query.filter_by(idOfer=oferta_id, aptitud=None).count()
+
+    return jsonify({
+        "etiquetas": etiquetas,
+        "cantidades": cantidades,
+        "promedios_experiencia": promedios_experiencia,
+        "total_candidatos": total_candidatos,
+        "aptos": aptos,
+        "no_aptos": no_aptos,
+        "sin_revisar": sin_revisar,
+        "provincias_candidatos": provincias_candidatos
+    })
 
 
 if __name__ == "__main__":
