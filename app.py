@@ -511,6 +511,13 @@ def cerrar_oferta(idOfer):
 
     oferta.fecha_cierre = datetime.now()  # 🔹 Fecha de cierre en el momento actual
     oferta.estado = "Cerrada"
+    
+
+    predecir_postulantes_automatica(oferta.idOfer)
+    asignar_puntajes_automatica(oferta.idOfer)
+
+    enviar_correos_automatica(oferta.idOfer)
+    
     db.session.commit()
 
     flash(f"La oferta '{oferta.nombre}' ha sido cerrada correctamente.", "success")
