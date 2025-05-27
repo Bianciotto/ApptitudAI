@@ -51,7 +51,7 @@ class Candidato(db.Model):
     idedu = db.Column(db.Integer, db.ForeignKey('educacion.idedu'))
     idtec = db.Column(db.Integer, db.ForeignKey('tecnologia.idtec'))
     idhab = db.Column(db.Integer, db.ForeignKey('habilidad.idhab'))
-    idOfer = db.Column(db.Integer, db.ForeignKey('oferta_laboral.idOfer'))  
+    idOfer = db.Column(db.Integer, db.ForeignKey('oferta_laboral.idOfer'))
     aptitud = db.Column(db.Boolean, nullable=True)
     puntaje = db.Column(db.Integer, nullable=False, default=0)
 
@@ -408,7 +408,7 @@ def postulacion():
             )
             db.session.add(nuevo_candidato_db)
             db.session.commit()
-            flash(f"Candidato {nombre} guardado correctamente en la base de datos.")
+            flash(f"{nombre}, tu CV ha sido correctamente enviado.")
         except Exception as e:
             flash(f"Error al guardar el candidato: {e}")
             return redirect("/postulacion")
@@ -510,11 +510,11 @@ def cerrar_oferta(idOfer):
         return redirect(url_for("ver_ofertas"))
 
     oferta.fecha_cierre = datetime.now()  # 🔹 Fecha de cierre en el momento actual
+    oferta.estado = "Cerrada"
     db.session.commit()
 
     flash(f"La oferta '{oferta.nombre}' ha sido cerrada correctamente.", "success")
     return redirect(url_for("ver_ofertas"))
-
 
 
 # Página de estadísticas
@@ -888,7 +888,7 @@ def calcular_puntaje(candidato):
 @login_required(roles=["Admin_RRHH"])
 def cargarCV():
     # Obtener todas las ofertas laborales disponibles
-    opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.all()]
+    opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
     opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
     opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
     opciones_habilidades = [habilidad.nombre for habilidad in Habilidad.query.all()]
