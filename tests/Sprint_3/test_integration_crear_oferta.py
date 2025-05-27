@@ -1,6 +1,6 @@
 import pytest
 from flask_sqlalchemy import SQLAlchemy
-from app import app as appLocal, OfertaLaboral,OfertaEducacion,OfertaHabilidad,OfertaTecnologia, db
+from app import app as appLocal, OfertaLaboral,OfertaEducacion,OfertaHabilidad,OfertaTecnologia, db, cerrar_oferta
 
 @pytest.fixture
 def client():
@@ -74,6 +74,7 @@ def test_asignacion_de_etiquetas_exitosa(client):
         db.session.delete(oferta_laboral)
         db.session.commit()
 
+#Test que verifica que no se cree una oferta que ya existe
 def test_oferta_duplicada(client):
     with appLocal.app_context():        
         with client.session_transaction() as sess:
@@ -114,7 +115,7 @@ def test_oferta_duplicada(client):
         db.session.commit()
 
 
-#test que verifica que no se cree la oferta con campos vacios ❌Fallando❌
+#Test que verifica que no se cree la oferta con campos vacios ❌Fallando❌
 def test_campos_vacios(client):
     with appLocal.app_context():
         with client.session_transaction() as sess:
@@ -133,21 +134,42 @@ def test_campos_vacios(client):
 
         assert response.status_code in [400,422]
 
-# def test_validacion_de_permisos(client):
-#     with appLocal.app_context():
-#         with client.session_transaction() as sess:
-#             sess["username"] = "Diego"
-#             sess["type"] = "Supervisor"
+#Test que verifica que se cierre la oferta laboral
+def test_validar_ciere_de_oferta(client):
+    with appLocal.app_context():
+        with client.session_transaction() as sess:
+            sess["username"] = "Fernando"
+            sess["type"] = "Admin_RRHH"
+        
+        response = client.post('/crear_oferta', data ={
+            'nombre': 'QA Tester Ssr',
+            'fecha_cierre': '2026-06-01',
+            'max_candidatos': '10',
+            'remuneracion': '300000',
+            'beneficio': 'Gimnasio',
+            'estado': 'Activa',
+            'usuario_responsable': 'Fernando' 
+        })
 
-#         response = client.post('/crear_oferta', data = {
-#             'nombre': 'Desarrollador Python SR',
-#             'fecha_cierre': '2025-06-01',
-#             'max_candidatos': '20',
-#             'remuneracion': '100000',
-#             'beneficio': 'Home Office',
-#             'estado': 'Activa',
-#             'usuario_responsable': 'Diego'
-#         })
+        assert response.status_code in [200,302]
 
-#         assert response.status_code == 200
-#         assert b"Acceso no autorizado" in response.data
+        oferta_laboral = OfertaLaboral.query.filter_by(nombre = 'QA Tester Ssr').first()
+
+        assert oferta_laboral is not None
+
+        response = client.post(f'/cerrar_oferta/{oferta_laboral.idOfer}')
+
+        assert response.status_code in [200,302]
+
+        # client.get('/postulantes')
+        
+        estado_oferta_actualizada = OfertaLaboral.query.filter_by(nombre = 'QA Tester Ssr').first().estado
+
+        assert estado_oferta_actualizada == 'Cerrada'
+
+        OfertaEducacion.query.filter_by(idOfer=oferta_laboral.idOfer).delete()
+        OfertaTecnologia.query.filter_by(idOfer=oferta_laboral.idOfer).delete()
+        OfertaHabilidad.query.filter_by(idOfer=oferta_laboral.idOfer).delete()
+        
+        db.session.delete(oferta_laboral)
+        db.session.commit()
