@@ -9,7 +9,7 @@
 <body>
     <header>
         <div class="logo">
-            <img src="{{ url_for('static', filename='images/logo_ungs_512.png') }}" alt="AI Logo">
+            <img src="{{ url_for('static', filename='images/logoApptitudAI.png') }}" alt="AI Logo">
         </div>
 <!-- Ícono de menú hamburguesa -->
 <input type="checkbox" id="menu-toggle" class="menu-toggle" />
@@ -73,7 +73,7 @@
     <div class="tooltip">
       <ul class="tooltip-menu-with-icon">
         <li class="tooltip-link">
-          <a href="#"><i class="fas fa-envelope"></i> ApptitudAI@gmail.com </a>
+          <a href="#"><i class="fas fa-envelope"></i> perfectmatch.rrhh@gmail.com </a>
         </li>
         <li class="tooltip-link">
           <a href="#"><i class="fas fa-phone"></i> +54 116668-4418</a>
@@ -118,19 +118,19 @@
         <span></span>
         <span></span>
         <label for="nombre">Nombre de la oferta:</label>
-        <input type="text" name="nombre" required>
+        <input type="text" name="nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' 0-9]{4,51}" required>
 
         <label for="fecha_cierre">Fecha de cierre:</label>
         <input type="date" name="fecha_cierre" required>
 
         <label for="max_candidatos">Cantidad máxima de candidatos:</label>
-        <input type="number" name="max_candidatos" min="1" required>
+        <input type="number" name="max_candidatos" min="4" max="1000" required>
 
-        <label for="remuneracion">Remuneración:</label>
-        <input type="number" name="remuneracion" placeholder="Ej: 4000" required>
+        <label for="remuneracion">Remuneración($USD):</label>
+        <input type="number" name="remuneracion" placeholder="Ej: 4000" min="200" max="90000" required>
 
         <label for="beneficio">Beneficio:</label>
-        <input type="text" name="beneficio" placeholder="Ej: Home office" required>
+        <input type="text" name="beneficio" placeholder="Ej: Home office" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' 0-9]{3,60}" required>
 
         <p>Usuario responsable: <strong>{{ session.get('username') }}</strong></p>
 
@@ -182,6 +182,15 @@
     <div class="footer-bottom">
         <p>© 2025 IA para la Predicción de Candidatos.All rights reserved</p>
     </div>
-</footer>
+  </footer>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+      let fechaInput = document.querySelector('input[name="fecha_cierre"]');
+      let hoy = new Date().toISOString().split("T")[0]; // Obtener la fecha actual en formato YYYY-MM-DD
+      fechaInput.setAttribute("min", hoy); // Establecer el mínimo en el input
+  });
+  </script>
+
 </body>
 </html>

@@ -28,7 +28,19 @@
             <i class="fas fa-lock"></i>
         </div>
 
-        <button class="w-100 btn btn-lg custom-login-btn" type="submit">Ingresar</button>    </form>
+        <button class="w-100 btn btn-lg custom-login-btn" type="submit">Ingresar</button> 
+        
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-messages">
+            {% for message in messages %}
+                <div class="alert">{{ message|safe }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+    
+    </form>
 
      <!--ANIMACION-->
      <div class="toggle-box">
@@ -38,7 +50,7 @@
     <div class="contact-info d-none">
         <h2>Contactate con Nosotros</h2>
         <p><i class="fas fa-phone"></i> +54 11 1234-5678</p>
-        <p><i class="fas fa-envelope"></i> ApptitudAI@gmail.com</p>
+        <p><i class="fas fa-envelope"></i> perfectmatch.rrhh@gmail.com</p>
         <p><i class="fas fa-map-marker-alt"></i> Av. Siempreviva 123, CABA</p>
     </div>
 

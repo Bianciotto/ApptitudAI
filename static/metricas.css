@@ -17,6 +17,43 @@ html {
     margin-top: 10px;
 }
 
+form {
+    animation: elevar 2s ease-out forwards;
+    margin: 3rem auto 4rem auto;
+    padding: 25px;
+    border-radius: 25px;
+    width: 50%;
+    text-align: center;
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.267);
+    background-size: 400% 400%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 20px  rgba(255, 255, 255, 0.4);
+    margin-bottom: 5px;
+}
+
+select {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.8);  
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 10px auto;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.2); 
+    border: none;  
+    transition: all 0.3s ease-in-out;
+    width: 300px;
+    text-align: center;
+}
+
+select:focus {
+    color: #ffffff;  
+    text-shadow: 0 0 10px #ffffff;
+    transform: scale(1.1);  
+    outline: none
+}
+
 /*INCOMPLETO*/
 body {
     display: flex;
@@ -825,7 +862,7 @@ details[open] .arrow {
 
 .footer-bottom p {
     font-size: 0.9rem;
-    color: #7404a8;
+    color: #02a1b6;
 }
 
 @media (max-width: 468px) {
