@@ -1,7 +1,7 @@
 from typing import Literal
 from flask.testing import FlaskClient
 import pytest
-from app import app as app_candidatos,Candidato,db
+from app import app as app_candidatos,Candidato,OfertaLaboral,db
 
 # Fixture para eliminar candidatos específicos antes de ejecutar los tests
 @pytest.fixture(scope="function", autouse=True)
@@ -39,6 +39,9 @@ def client_Candidatos():
 )
 def test_valid_agregar_postulacion(client_Candidatos: FlaskClient, nombre: Literal['Lucas'] | Literal['Jose'], apellido: Literal['Abalos'] | Literal['Perez'], email: Literal['correoDePueba123@gmail.com'] | Literal['correoDePueba4123@gmail.com'], telefono: Literal['1135356456'] | Literal['1343567856'], ubicacion: Literal['Buenos Aires'], experiencia: Literal['2'], educacion: Literal['Secundario'], tecnologias: Literal['Python'], habilidades: Literal['Trabajo en equipo']):
     client_Candidatos.get('/postulacionIT')
+    
+    oferta_id = OfertaLaboral.query.filter_by(estado = 'Activa').first().idOfer
+
     response = client_Candidatos.post('/postulacion', data={
         'nombre': nombre,
         'apellido': apellido,
@@ -49,13 +52,14 @@ def test_valid_agregar_postulacion(client_Candidatos: FlaskClient, nombre: Liter
         'educacion': educacion,  
         'tecnologias': tecnologias,        
         'habilidades': habilidades,
+        'idOfer': str(oferta_id),
         'puntaje': 0
     })
     assert response.status_code in [200, 302]
 
     # Verificar que el postulante fue ingresado en la base de datos
-    with client_Candidatos.application.app_context():
-        candidato = Candidato.query.filter_by(id=email).first()
+    with app_candidatos.app_context():
+        candidato = Candidato.query.filter_by(id=email + str(oferta_id)).first()
         assert candidato is not None
         #Se puede explayar mas
 
@@ -75,16 +79,19 @@ def test_valid_agregar_postulacion(client_Candidatos: FlaskClient, nombre: Liter
 def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre: Literal['Martin'] | Literal['Agustin'], apellido: Literal['Gonzales'] | Literal['Martinez'], email: Literal['tincho462@gmail.com'] | Literal['agusmartinez@hotmail.com'], telefono: Literal['1125432354'] | Literal['1123432345'], ubicacion: Literal['Buenos Aires'] | Literal['Formosa'], experiencia: Literal['6'] | Literal['3'], educacion: Literal['Universitario'] | Literal['Postgrado'], tecnologias: Literal['Java'] | Literal['SQL'], habilidades: Literal['Trabajo en equipo'] | Literal['Liderazgo']):
     client_Candidatos.get('/postulacionIT')
 
+    oferta_id = OfertaLaboral.query.filter_by(estado = 'Activa').first().idOfer
+
     data = {
         'nombre': nombre,
         'apellido': apellido,
         'email': email, 
         'telefono': telefono,
-        'ubicacion': ubicacion,
+        'ubicacion': ubicacion, 
         'experiencia': experiencia, 
         'educacion': educacion,  
         'tecnologias': tecnologias,        
         'habilidades': habilidades,
+        'idOfer': str(oferta_id),
         'puntaje': 0
     }
 
@@ -95,7 +102,7 @@ def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre: Literal['
     assert response2.status_code == 500
 
     with client_Candidatos.application.app_context():
-       candidato = Candidato.query.filter_by(id=email).all()
+       candidato = Candidato.query.filter_by(id=email + str(oferta_id)).first()
        assert len(candidato) == 1
 
 
@@ -110,17 +117,43 @@ def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre: Literal['
 
 )
 def test_campos_inexistentes(client_Candidatos: FlaskClient,nombre: Literal['Pepe'], apellido: Literal['Argento'], email: Literal['pepeargento1903@hotmail.com'], telefono: Literal['1535674323'], ubicacion: Literal['Buenos Aires'], experiencia: Literal['7'], educacion: Literal['Primario'] | Literal['Postgrado'], tecnologias: Literal['Java'] | Literal['Assembler'], habilidades: Literal['Empatia'] | Literal['Vender zapatos']):
-    response = client_Candidatos.post('/postulacion', data = {
+    with app_candidatos.app_context():
+        oferta_id = OfertaLaboral.query.filter_by(estado='Activa').first().idOfer
+
+    response = client_Candidatos.post('/postulacion', data={
         'nombre': nombre,
         'apellido': apellido,
         'email': email, 
         'telefono': telefono,
-        'ubicacion': ubicacion,
+        'ubicacion': ubicacion, 
         'experiencia': experiencia, 
         'educacion': educacion,  
         'tecnologias': tecnologias,        
         'habilidades': habilidades,
+        'idOfer': str(oferta_id),
         'puntaje': 0
     })
 
     assert response.status_code == 400
+
+# def test_cargar_candidatos_con_oferta_cerrada(client_Candidatos):
+#     client_Candidatos.get('/postulacionIT')
+    
+#     id_oferta_cerrada = OfertaLaboral.query.filter_by(estado = 'Cerrada').first()
+    
+#     response = client_Candidatos.post('/postulacion', data = {
+#         'nombre': 'Carlos',
+#         'apellido': 'Rodriguez',
+#         'email': 'Carlitos@gmail.com', 
+#         'telefono': '1134123423',
+#         'ubicacion': 'Buenos Aires',
+#         'experiencia': 5, 
+#         'educacion': 'Universitario',  
+#         'tecnologias': 'Java',        
+#         'habilidades': 'Liderazgo',
+#         'idOfer': str(id_oferta_cerrada.idOfer),
+#         'puntaje': 0
+#     })
+
+#     candidato = Candidato.query.filter_by(mail='Carlitos@gmail.com').first()
+#     assert candidato is None
