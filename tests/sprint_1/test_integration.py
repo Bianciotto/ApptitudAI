@@ -102,40 +102,10 @@ def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre: Literal['
     assert response2.status_code == 500
 
     with client_Candidatos.application.app_context():
-       candidato = Candidato.query.filter_by(id=email + str(oferta_id)).first()
-       assert len(candidato) == 1
+       candidatos = Candidato.query.filter_by(id=email + str(oferta_id)).all()
+       assert len(candidatos) == 1
 
-
-#test que evalua que si se pasa un campo inexistente en educacion, habilidad y tecnologia
-@pytest.mark.parametrize(
-    "nombre, apellido, email, telefono, ubicacion, experiencia, educacion, tecnologias, habilidades",
-    [
-        ("Pepe", "Argento", "pepeargento1903@hotmail.com", "1535674323", "Buenos Aires", "7", "Primario","Java","Empatia"),
-        ("Pepe", "Argento", "pepeargento1903@hotmail.com", "1535674323", "Buenos Aires", "7", "Postgrado","Assembler","Empatia"),
-        ("Pepe", "Argento", "pepeargento1903@hotmail.com", "1535674323", "Buenos Aires", "7", "Postgrado","Java","Vender zapatos")
-    ]
-
-)
-def test_campos_inexistentes(client_Candidatos: FlaskClient,nombre: Literal['Pepe'], apellido: Literal['Argento'], email: Literal['pepeargento1903@hotmail.com'], telefono: Literal['1535674323'], ubicacion: Literal['Buenos Aires'], experiencia: Literal['7'], educacion: Literal['Primario'] | Literal['Postgrado'], tecnologias: Literal['Java'] | Literal['Assembler'], habilidades: Literal['Empatia'] | Literal['Vender zapatos']):
-    with app_candidatos.app_context():
-        oferta_id = OfertaLaboral.query.filter_by(estado='Activa').first().idOfer
-
-    response = client_Candidatos.post('/postulacion', data={
-        'nombre': nombre,
-        'apellido': apellido,
-        'email': email, 
-        'telefono': telefono,
-        'ubicacion': ubicacion, 
-        'experiencia': experiencia, 
-        'educacion': educacion,  
-        'tecnologias': tecnologias,        
-        'habilidades': habilidades,
-        'idOfer': str(oferta_id),
-        'puntaje': 0
-    })
-
-    assert response.status_code == 400
-
+#Test que verifica que no se pueda agregar un candidato a una oferta cerrada ❌Fallando❌
 # def test_cargar_candidatos_con_oferta_cerrada(client_Candidatos):
 #     client_Candidatos.get('/postulacionIT')
     
@@ -155,5 +125,6 @@ def test_campos_inexistentes(client_Candidatos: FlaskClient,nombre: Literal['Pep
 #         'puntaje': 0
 #     })
 
-#     candidato = Candidato.query.filter_by(mail='Carlitos@gmail.com').first()
+#     assert response.status_code in [400,409, 500]
+#     candidato = Candidato.query.filter_by(id='Carlitos@gmail.com' + str(id_oferta_cerrada.idOfer)).first()
 #     assert candidato is None

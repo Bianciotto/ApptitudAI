@@ -20,7 +20,7 @@ def test_crear_oferta_exitosa(client):
 
         response = client.post('/crear_oferta', data={
             'nombre': 'Desarrollador Frontend SR',
-            'fecha_cierre': '2025-06-01',
+            'fecha_cierre': '2026-06-01',
             'max_candidatos': '20',
             'remuneracion': '100000',
             'beneficio': 'Home Office',
@@ -91,10 +91,10 @@ def test_oferta_duplicada(client):
             'usuario_responsable': 'Fernando'  
         })
 
-        assert response1.status_code in [200,302]
+        assert response1.status_code in [200, 302]
 
         response2 = client.post('/crear_oferta', data={
-            'nombre': 'Desarrollador Java SR',
+            'nombre': 'Desarrollador Java JR',  # Mismo nombre
             'fecha_cierre': '2025-06-01',
             'max_candidatos': '20',
             'remuneracion': '100000',
@@ -103,15 +103,16 @@ def test_oferta_duplicada(client):
             'usuario_responsable': 'Fernando' 
         })
 
-        assert response2.status_code in [400,409,500]
+        assert response2.status_code in [400, 409, 500]
 
-        oferta_laboral = OfertaLaboral.query.filter_by(nombre= 'Desarrollador Java JR').first()
+        ofertas = OfertaLaboral.query.filter_by(nombre='Desarrollador Java JR').all()
+        assert len(ofertas) == 1
 
-        OfertaEducacion.query.filter_by(idOfer=oferta_laboral.idOfer).delete()
-        OfertaTecnologia.query.filter_by(idOfer=oferta_laboral.idOfer).delete()
-        OfertaHabilidad.query.filter_by(idOfer=oferta_laboral.idOfer).delete()
-        
-        db.session.delete(oferta_laboral)
+        oferta = ofertas[0]
+        OfertaEducacion.query.filter_by(idOfer=oferta.idOfer).delete()
+        OfertaTecnologia.query.filter_by(idOfer=oferta.idOfer).delete()
+        OfertaHabilidad.query.filter_by(idOfer=oferta.idOfer).delete()
+        db.session.delete(oferta)
         db.session.commit()
 
 
@@ -160,8 +161,6 @@ def test_validar_ciere_de_oferta(client):
         response = client.post(f'/cerrar_oferta/{oferta_laboral.idOfer}')
 
         assert response.status_code in [200,302]
-
-        # client.get('/postulantes')
         
         estado_oferta_actualizada = OfertaLaboral.query.filter_by(nombre = 'QA Tester Ssr').first().estado
 
