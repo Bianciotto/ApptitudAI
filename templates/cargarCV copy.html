@@ -13,6 +13,8 @@
     <div class="logo">
         <img src="{{ url_for('static', filename='images/logoApptitudAI.png') }}" alt="AI Image">
     </div>
+    
+    
 
 <!-- Ícono de menú hamburguesa -->
 <input type="checkbox" id="menu-toggle" class="menu-toggle" />
@@ -57,6 +59,8 @@
       </div>
     </details>
 
+
+
     <!-- Menú desplegable: Metricas-->
     <details>
       <summary>
@@ -67,8 +71,9 @@
         <a href="{{ url_for('estadisticas') }}"><i class="fas fa-sliders-h"></i>  Estadisticas</a>
         <a href="{{ url_for('metricas') }}"><i class="fas fa-list"></i> Ver métricas</a>
       </div>
-    </details>
 
+      
+    </details>
     <!-- Menú desplegable: Volver al inicio-->
     <div class="submenu">
         <a href="{{ url_for('predecir') }}">Volver al Inicio</a>
@@ -123,14 +128,14 @@
 <body>
     <h1>Cargar el<span class="subtitulo">CV</span>&nbsp;del Candidato</h1>
 
-    <form method="POST" enctype="multipart/form-data">
-      <h2>Subir CV en PDF</h2>
-      <label for="cv_pdf">CV en PDF:</label>
-      <input type="file" name="cv_pdf" accept=".pdf" required>
-      <button type="submit">Extraer datos del CV</button>
+    <!-- Formulario solo para cargar PDF -->
+    <form method="post" action="/cargarCV" enctype="multipart/form-data">
+        <label for="cv_pdf">Subir CV (PDF):</label>
+        <input type="file" name="cv_pdf" id="cv_pdf" accept="application/pdf">
+        <button type="submit" name="accion" value="confirmar">Confirmar</button> <!-- Envío sin restricciones -->
     </form>
 
-    <form method="POST" action="/cargarCV" enctype="multipart/form-data">
+    <form method="post" action="/cargarCV" enctype="multipart/form-data">
         <span></span>
         <span></span>
         <span></span>
@@ -140,54 +145,55 @@
         <select name="idOfer" required>
             <option value="">-- Selecciona una oferta --</option>
             {% for oferta in opciones_ofertas if oferta.estado != "Cerrada" %}
-                <option value="{{ oferta.idOfer }}">{{ oferta.nombre }}</option>
+                <option value="{{ oferta.idOfer }}" {% if oferta.idOfer == idOfer %}selected{% endif %}>{{ oferta.nombre }}</option>
             {% endfor %}
         </select>
-
         <label for="nombre">Nombre</label>
-        <input type="text" name="nombre" value="{{ precargado.nombre if precargado and precargado.nombre else '' }}" required>
+        <input type="text" name="nombre" id="nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' ]{2,20}" title="Debe tener entre 2 y 20 letras, puede incluir espacios o apóstrofes" value="{{ nombre }}" required>
         
         <label for="apellido">Apellido</label>
-        <input type="text" name="apellido" value="{{ precargado.apellido if precargado and precargado.apellido else '' }}" required>
+        <input type="text" name="apellido" id="apellido" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' ]{2,20}" title="Debe tener entre 2 y 20 letras, puede incluir espacios o apóstrofes" value="{{ apellido }}" required>
 
         <label for="email">Correo eléctronico</label>
-        <input type="email" name="email" value="{{ precargado.email if precargado and precargado.email else '' }}" required>
+        <input type="email" name="email" id="email" value="{{ email }}" required>
 
         <label for="telefono">Teléfono</label>
-        <input type="text" name="telefono" pattern="\d{8,10}" maxlength="10" title="Debe tener entre 8 y 10 números" value="{{ precargado.telefono if precargado and precargado.telefono else '' }}" required>
+        <input type="text" name="telefono" pattern="\d{8,10}" maxlength="10" title="Debe tener entre 8 y 10 números" value="{{ telefono }}" required>
 
         <label for="ubicacion">Ubicación</label>
         <select name="ubicacion" id="ubicacion" required>
-            <option disabled selected value="">-- Selecciona una provincia de Argentina --</option>
-            {% for prov in ["Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán"] %}
-                <option value="{{ prov }}" {% if precargado and precargado.ubicacion == prov %}selected{% endif %}>{{ prov }}</option>
+            <option value="">Seleccione una provincia</option>
+            {% for provincia in [
+                "Buenos Aires", "Ciudad Autónoma de Buenos Aires", "Catamarca", "Chaco", "Chubut", "Córdoba",
+                "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones",
+                "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe",
+                "Santiago del Estero", "Tierra del Fuego", "Tucumán"
+            ] %}
+            <option value="{{ provincia }}" {% if provincia == ubicacion %}selected{% endif %}>{{ provincia }}</option>
             {% endfor %}
         </select>
         
         <label for="experiencia">Experiencia (en años)</label>
-        <input type="number" min="0" max="15" name="experiencia" id="experiencia" value="{{ precargado.experiencia if precargado else '' }}" required>
-        
-        <label for="educacion">Educación</label>
-        <select name="educacion" id="educacion" required>
-            <option disabled selected value="">-- Selecciona nivel de educación más alto alcanzado --</option>
-            {% for opcion in opciones_educacion %}
-                <option value="{{ opcion }}" {% if precargado and precargado.educacion == opcion %}selected{% endif %}>{{ opcion }}</option>
+        <input type="number" min="0" max="15" name="experiencia" id="experiencia" value="{{ experiencia }}" required>
+
+        <label for="educacion">Nivel educativo</label>
+        <select name="educacion" id="educacion">
+            {% for opcion in ["Postgrado", "Universitario", "Secundario"] %}
+            <option value="{{ opcion }}" {% if opcion == educacion %}selected{% endif %}>{{ opcion }}</option>
             {% endfor %}
         </select>
         
         <label for="tecnologias">Tecnologías</label>
-        <select name="tecnologias" id="tecnologias" required>
-            <option disabled selected value="">-- Selecciona la tecnologia que mejor domina --</option>
+        <select name="tecnologias" id="tecnologias">
             {% for opcion in opciones_tecnologias %}
-                <option value="{{ opcion }}" {% if precargado and precargado.tecnologias == opcion %}selected{% endif %}>{{ opcion }}</option>
+            <option value="{{ opcion }}" {% if opcion == tecnologias %}selected{% endif %}>{{ opcion }}</option>
             {% endfor %}
         </select>
         
         <label for="habilidades">Habilidades</label>
-        <select name="habilidades" id="habilidades" required>
-            <option disabled selected value="">-- Selecciona la habilidad que mejor lo identifica --</option>
+        <select name="habilidades" id="habilidades">
             {% for opcion in opciones_habilidades %}
-                <option value="{{ opcion }}" {% if precargado and precargado.habilidades == opcion %}selected{% endif %}>{{ opcion }}</option>
+            <option value="{{ opcion }}" {% if opcion == habilidades %}selected{% endif %}>{{ opcion }}</option>
             {% endfor %}
         </select>
        
@@ -202,6 +208,7 @@
         {% endwith %}
         <button type="submit">Enviar CV</button>
         
+
     </form>
 </body>
 

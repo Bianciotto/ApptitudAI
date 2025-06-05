@@ -19,6 +19,7 @@ from flask_mail import Mail, Message
 from functools import wraps
 from datetime import datetime
 from flask import jsonify
+import fitz
 
 
 app = Flask(__name__)
@@ -908,11 +909,158 @@ def calcular_puntaje(candidato):
 
     return puntaje
 
+"""
+modificaciones
+
+def extract_text_from_pdf(pdf_path):
+    text = ""
+    with fitz.open(pdf_path) as doc:
+        for page in doc:
+            text += page.get_text("text") + "\n"
+    return text
+
+def extract_info(text):
+    email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
+    phone_pattern = r"\b\d{8,13}\b"
+
+    email = re.findall(email_pattern, text)
+    phone = re.findall(phone_pattern, text)
+    
+    # 🎯 Nombre y apellido (puedes mejorar con NLP)
+    lines = text.split("\n")
+    nombre = lines[0] if lines else ""
+    apellido = lines[1] if len(lines) > 1 else ""
+
+    # 🎯 Detección de ubicación (primer provincia encontrada)
+    provincias_argentinas = [
+        "Buenos Aires", "Ciudad Autónoma de Buenos Aires", "Catamarca", "Chaco", "Chubut", "Córdoba",
+        "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones",
+        "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe",
+        "Santiago del Estero", "Tierra del Fuego", "Tucumán"
+    ]
+    ubicacion_encontrada = next((provincia for provincia in provincias_argentinas if provincia in text), None)
+
+    # 🎯 Detección de la primera tecnología encontrada
+    tecnologias_buscar = ["Python", "Java", "C++", "SQL"]
+    tecnologia_encontrada = next((tech for tech in tecnologias_buscar if tech in text), None)
+
+    # 🎯 Búsqueda de años de experiencia cerca de "experiencia"
+    experiencia_pattern = r"(\d+)\s*(?:años|año)?\s*experiencia"
+    experiencia_match = re.search(experiencia_pattern, text, re.IGNORECASE)
+    experiencia_encontrada = int(experiencia_match.group(1)) if experiencia_match else None
+
+    # 🎯 Detección del nivel educativo más alto encontrado
+    niveles_prioritarios = ["Postgrado", "Universitario", "Secundario"]
+    educacion_encontrada = None
+
+    for nivel in niveles_prioritarios:
+        if nivel in text:
+            educacion_encontrada = nivel
+            break  # Se detiene en el nivel más alto encontrado
+
+    return {
+        "nombre": nombre.strip(),
+        "apellido": apellido.strip(),
+        "email": email[0] if email else "",
+        "telefono": phone[0] if phone else "",
+        "ubicacion": ubicacion_encontrada,
+        "tecnologia": tecnologia_encontrada,
+        "experiencia": experiencia_encontrada,
+        "educacion": educacion_encontrada  # Nivel educativo más alto encontrado
+    }
+
+"""
+
+def extraer_info_cv_pdf(file_storage):
+    texto = ""
+    with fitz.open(stream=file_storage.read(), filetype="pdf") as doc:
+        for pagina in doc:
+            texto += pagina.get_text()
+
+    info = {}
+
+    # Email
+    email = re.search(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", texto)
+    if email:
+        info['email'] = email.group().lower()
+
+    # Teléfono
+    telefono = re.search(
+        r"(?:\+54\s?|54\s?|0)?(?:\(?\d{2,4}\)?)[\s.-]{0,2}"      # Prefijo y área
+        r"(?:15[\s.-]{0,2})?"                                     # Prefijo celular
+        r"\d{3,4}[\s.-]?\d{4}",                                   # Número principal
+        texto
+    )
+    if telefono:
+        numero = re.sub(r"\D", "", telefono.group())  # quitar todo lo que no sea dígito
+        if len(numero) >= 8:
+            info["telefono"] = telefono.group()
+
+    # Nombre y Apellido (heurística básica)
+    lineas = texto.strip().split("\n")
+    for linea in lineas:
+        if len(linea.split()) >= 2 and not re.search(r"[@\d]", linea):
+            nombres = linea.strip().split()
+            nombre = " ".join(nombres[:2])
+            apellido = " ".join(nombres[2:4]) if len(nombres) > 2 else ""
+            info['nombre'] = nombre.title()
+            info['apellido'] = apellido.title()
+            break
+
+    # Educación
+    niveles_ordenados = ["Postgrado", "Universitario", "Secundario"]
+    for nivel in niveles_ordenados:
+        if nivel.lower() in texto.lower():
+            info["educacion"] = nivel
+            break
+
+    # Tecnologías (primer match)
+    tecnologias = [t.nombre for t in Tecnologia.query.all()]
+    for tec in tecnologias:
+        if tec.lower() in texto.lower():
+            info["tecnologias"] = tec
+            break
+
+    # Habilidades (primer match)
+    habilidades = [h.nombre for h in Habilidad.query.all()]
+    for hab in habilidades:
+        if hab.lower() in texto.lower():
+            info["habilidades"] = hab
+            break
+
+    # Ubicación (primera provincia argentina encontrada)
+    provincias = [
+        "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut",
+        "Córdoba", "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
+        "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis",
+        "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán"
+    ]
+    for prov in provincias:
+        if prov.lower() in texto.lower():
+            info["ubicacion"] = prov
+            break
+
+    # Años de experiencia
+    exp_match = re.search(r"(\d+)\s+(años|año)\s+de\s+experiencia", texto.lower())
+    if not exp_match:
+        exp_match = re.search(r"experiencia\s+laboral.*?(\d+)\s+(años|año)", texto.lower())
+    if not exp_match:
+        exp_match = re.search(r"(más de|alrededor de)\s+(\d+)\s+(años|año)", texto.lower())
+
+    if exp_match:
+        anios = exp_match.group(1) if exp_match.lastindex == 2 else exp_match.group(2)
+        try:
+            info["experiencia"] = int(anios)
+        except ValueError:
+            pass
+
+    return info
+
 
 @app.route("/cargarCV", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])
 def cargarCV():
-    # Obtener todas las ofertas laborales disponibles
+    # Cargar opciones para los dropdowns
     opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
     opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
     opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
@@ -924,7 +1072,24 @@ def cargarCV():
     session["opciones_habilidades"] = opciones_habilidades
 
     if request.method == "POST":
-        # Obtener datos del formulario
+        # Si se sube un CV PDF, extraer datos y volver a mostrar el formulario
+        if "cv_pdf" in request.files:
+            file = request.files["cv_pdf"]
+            if file and file.filename.endswith(".pdf"):
+                info = extraer_info_cv_pdf(file)
+                return render_template(
+                    "cargarCV.html",
+                    opciones_ofertas=opciones_ofertas,
+                    opciones_educacion=opciones_educacion,
+                    opciones_tecnologias=opciones_tecnologias,
+                    opciones_habilidades=opciones_habilidades,
+                    precargado=info
+                )
+            else:
+                flash("Debes seleccionar un archivo PDF válido para continuar.")
+                return redirect("/cargarCV")
+
+        # Si no es carga de PDF, procesar formulario normalmente
         nombre = request.form["nombre"]
         apellido = request.form["apellido"]
         email = request.form["email"]
@@ -934,14 +1099,13 @@ def cargarCV():
         educacion = request.form["educacion"]
         tecnologias = request.form["tecnologias"]
         habilidades = request.form["habilidades"]
-        idOfer = request.form.get("idOfer")  # Nueva variable para oferta laboral
+        idOfer = request.form.get("idOfer")
 
         if not idOfer:
             flash("Debes seleccionar una oferta laboral.")
             return redirect("/cargarCV")
 
         try:
-            # Buscar el ID correspondiente en las tablas
             educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
             tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
             habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
@@ -954,7 +1118,6 @@ def cargarCV():
             idtec = tecnologia_obj.idtec
             idhab = habilidad_obj.idhab
 
-            # Crear y guardar el candidato con la oferta laboral seleccionada
             nuevo_candidato_db = Candidato(
                 id=email + idOfer,
                 nombre=nombre,
@@ -966,7 +1129,7 @@ def cargarCV():
                 idedu=idedu,
                 idtec=idtec,
                 idhab=idhab,
-                idOfer=idOfer,  # Asociación con la oferta laboral
+                idOfer=idOfer,
                 aptitud=None
             )
             db.session.add(nuevo_candidato_db)
@@ -978,12 +1141,130 @@ def cargarCV():
 
     return render_template(
         "cargarCV.html",
-        opciones_ofertas=session["opciones_ofertas"],  # Pasamos ofertas al HTML
-        opciones_educacion=session["opciones_educacion"],
-        opciones_tecnologias=session["opciones_tecnologias"],
-        opciones_habilidades=session["opciones_habilidades"]
+        opciones_ofertas=opciones_ofertas,
+        opciones_educacion=opciones_educacion,
+        opciones_tecnologias=opciones_tecnologias,
+        opciones_habilidades=opciones_habilidades
     )
 
+"""
+@app.route("/cargarCV", methods=["GET", "POST"])
+@login_required(roles=["Admin_RRHH"])
+def cargarCV():
+    nombre, apellido, email, telefono, ubicacion, experiencia, educacion, tecnologias, habilidades, idOfer = "", "", "", "", "", "", "", "", "", ""
+
+    # Obtener todas las ofertas laborales disponibles
+    opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
+    opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
+    opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
+    opciones_habilidades = [habilidad.nombre for habilidad in Habilidad.query.all()]
+
+    session["opciones_ofertas"] = opciones_ofertas
+    session["opciones_educacion"] = opciones_educacion
+    session["opciones_tecnologias"] = opciones_tecnologias
+    session["opciones_habilidades"] = opciones_habilidades
+
+    if request.method == "POST":
+        print("✅ Solicitud POST recibida")  # 💡 Verifica que Flask está recibiendo POST
+
+        # 🔍 Debug: Ver qué datos y archivos llegan al servidor
+        print(f"🔍 Datos recibidos en POST: {request.form.to_dict()}")
+        print(f"🔍 Archivos recibidos en POST: {request.files.to_dict()}")
+
+        accion = request.form.get("accion")  # 🔍 Diferenciar si es "confirmar" o "enviar"
+        print(f"🔹 Acción recibida: {accion}")  # 💡 Verifica si llega "confirmar"
+
+        idOfer = request.form.get("idOfer")
+        habilidades = request.form["habilidades"]  # 🎯 Captura de habilidades seleccionadas por el usuario
+
+        cv_pdf = request.files.get("cv_pdf")
+        if not cv_pdf:
+            print("⚠️ No se recibió ningún archivo PDF.")
+
+        if not idOfer:
+            flash("Debes seleccionar una oferta laboral.")
+            return redirect("/cargarCV")
+
+        if accion == "confirmar":  # 🎯 Acción "Confirmar": extraer datos sin enviarlos a la BD
+            if cv_pdf and cv_pdf.filename.endswith(".pdf"):
+                pdf_path = f"uploads/{cv_pdf.filename}"
+                cv_pdf.save(pdf_path)
+                if not os.path.exists(pdf_path):
+                    print("⚠️ El archivo PDF no se guardó correctamente.")  # 💡 Depuración
+                else:
+                    print("⚠️ El archivo PDF no se guardó.")
+                text = extract_text_from_pdf(pdf_path)
+                print(f"📄 Texto extraído del PDF:\n{text}")  # 💡 Verifica si el PDF tiene contenido
+                info = extract_info(text)
+                print(f"🔍 Datos extraídos: {info}")  # 💡 Verifica qué información encontró
+                # 🔍 Verifica si se extrajo información
+                if not info or not any(info.values()):
+                    flash("⚠️ No se pudo extraer información del PDF. Verifica el archivo.")
+                    return redirect("/cargarCV")  # 🚨 Evita continuar si la extracción falló
+                
+                nombre = info["nombre"]
+                apellido = info["apellido"]
+                email = info["email"]
+                telefono = info["telefono"]
+                ubicacion = info["ubicacion"]
+                experiencia = info["experiencia"]
+                educacion = info["educacion"]
+                tecnologias = info["tecnologia"]
+            
+        elif accion == "enviar":  # 🎯 Acción "Enviar": ahora sí se guarda el candidato en la BD
+            try:
+                # Buscar el ID correspondiente en las tablas
+                educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
+                tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
+                habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
+
+                if not educacion_obj or not tecnologia_obj or not habilidad_obj:
+                    flash("Error: Algunos valores seleccionados no son válidos. Revisa tu selección.")
+                    return redirect("/cargarCV")
+
+                idedu = educacion_obj.idedu
+                idtec = tecnologia_obj.idtec
+                idhab = habilidad_obj.idhab
+
+                # Crear y guardar el candidato con la oferta laboral seleccionada
+                nuevo_candidato_db = Candidato(
+                    id=email + idOfer,
+                    nombre=nombre,
+                    apellido=apellido,
+                    mail=email,
+                    telefono=telefono,
+                    ubicacion=ubicacion,
+                    experiencia=experiencia,
+                    idedu=idedu,
+                    idtec=idtec,
+                    idhab=idhab,
+                    idOfer=idOfer,  # Asociación con la oferta laboral
+                    aptitud=None
+                )
+                db.session.add(nuevo_candidato_db)
+                db.session.commit()
+                flash(f"Candidato {nombre} guardado correctamente y asociado a la oferta laboral '{OfertaLaboral.query.get(idOfer).nombre}'.")
+            except Exception:
+                flash("Este mail ya había sido registrado en esta postulación.")
+                return redirect("/cargarCV")
+            
+    return render_template("cargarCV.html",
+        opciones_ofertas=opciones_ofertas,
+        opciones_educacion=opciones_educacion,
+        opciones_tecnologias=opciones_tecnologias,
+        opciones_habilidades=opciones_habilidades,
+        nombre=nombre,
+        apellido=apellido,
+        email=email,
+        telefono=telefono,
+        ubicacion=ubicacion,
+        experiencia=experiencia,
+        educacion=educacion,
+        tecnologias=tecnologias,
+        habilidades=habilidades,  # 🎯 Se pasa al renderizado de HTML
+        idOfer=idOfer
+    )
+"""
 
 @app.route("/etiquetas", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])
