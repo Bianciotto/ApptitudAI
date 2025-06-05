@@ -268,10 +268,10 @@ def login():
                 else:
                     return "Rol no reconocido"
             else:
-                flash("Contraseña incorrecta")
+                flash("❌Contraseña incorrecta", category="login")
                 return render_template("auth/login.html")
         else:
-            flash("Usuario no existente")
+            flash("❌Usuario no existente", category="login")
             return render_template("auth/login.html")
     return render_template("auth/login.html")
 
@@ -1033,7 +1033,7 @@ def cargarCV():
                 
                 try:
                     info = extraer_info_cv_pdf(file)
-                    flash("✔️Información extraída existosamente del archivo PDF.", category="pdf")
+                    flash("✔️Información extraída exitosamente del archivo PDF.", category="pdf")
                     return render_template(
                         "cargarCV.html",
                         opciones_ofertas=opciones_ofertas,

@@ -30,7 +30,7 @@
 
         <button class="w-100 btn btn-lg custom-login-btn" type="submit">Ingresar</button> 
         
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(category_filter=["login"]) %}
         {% if messages %}
             <div class="flash-messages">
             {% for message in messages %}
