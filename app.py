@@ -910,64 +910,9 @@ def calcular_puntaje(candidato):
     return puntaje
 
 """
-modificaciones
 
-def extract_text_from_pdf(pdf_path):
-    text = ""
-    with fitz.open(pdf_path) as doc:
-        for page in doc:
-            text += page.get_text("text") + "\n"
-    return text
+SPRINT 4
 
-def extract_info(text):
-    email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
-    phone_pattern = r"\b\d{8,13}\b"
-
-    email = re.findall(email_pattern, text)
-    phone = re.findall(phone_pattern, text)
-    
-    # 🎯 Nombre y apellido (puedes mejorar con NLP)
-    lines = text.split("\n")
-    nombre = lines[0] if lines else ""
-    apellido = lines[1] if len(lines) > 1 else ""
-
-    # 🎯 Detección de ubicación (primer provincia encontrada)
-    provincias_argentinas = [
-        "Buenos Aires", "Ciudad Autónoma de Buenos Aires", "Catamarca", "Chaco", "Chubut", "Córdoba",
-        "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones",
-        "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe",
-        "Santiago del Estero", "Tierra del Fuego", "Tucumán"
-    ]
-    ubicacion_encontrada = next((provincia for provincia in provincias_argentinas if provincia in text), None)
-
-    # 🎯 Detección de la primera tecnología encontrada
-    tecnologias_buscar = ["Python", "Java", "C++", "SQL"]
-    tecnologia_encontrada = next((tech for tech in tecnologias_buscar if tech in text), None)
-
-    # 🎯 Búsqueda de años de experiencia cerca de "experiencia"
-    experiencia_pattern = r"(\d+)\s*(?:años|año)?\s*experiencia"
-    experiencia_match = re.search(experiencia_pattern, text, re.IGNORECASE)
-    experiencia_encontrada = int(experiencia_match.group(1)) if experiencia_match else None
-
-    # 🎯 Detección del nivel educativo más alto encontrado
-    niveles_prioritarios = ["Postgrado", "Universitario", "Secundario"]
-    educacion_encontrada = None
-
-    for nivel in niveles_prioritarios:
-        if nivel in text:
-            educacion_encontrada = nivel
-            break  # Se detiene en el nivel más alto encontrado
-
-    return {
-        "nombre": nombre.strip(),
-        "apellido": apellido.strip(),
-        "email": email[0] if email else "",
-        "telefono": phone[0] if phone else "",
-        "ubicacion": ubicacion_encontrada,
-        "tecnologia": tecnologia_encontrada,
-        "experiencia": experiencia_encontrada,
-        "educacion": educacion_encontrada  # Nivel educativo más alto encontrado
-    }
 
 """
 
@@ -1075,18 +1020,34 @@ def cargarCV():
         # Si se sube un CV PDF, extraer datos y volver a mostrar el formulario
         if "cv_pdf" in request.files:
             file = request.files["cv_pdf"]
+            
             if file and file.filename.endswith(".pdf"):
-                info = extraer_info_cv_pdf(file)
-                return render_template(
-                    "cargarCV.html",
-                    opciones_ofertas=opciones_ofertas,
-                    opciones_educacion=opciones_educacion,
-                    opciones_tecnologias=opciones_tecnologias,
-                    opciones_habilidades=opciones_habilidades,
-                    precargado=info
-                )
+                # Validar tamaño (máx. 5MB)
+                file.seek(0, os.SEEK_END)
+                size = file.tell()
+                file.seek(0)
+               
+                if size > 5 * 1024 * 1024:
+                    flash("❌El archivo excede el tamaño máximo permitido de 5 MB.", category="pdf")
+                    return redirect("/cargarCV")
+                
+                try:
+                    info = extraer_info_cv_pdf(file)
+                    flash("✔️Información extraída existosamente del archivo PDF.", category="pdf")
+                    return render_template(
+                        "cargarCV.html",
+                        opciones_ofertas=opciones_ofertas,
+                        opciones_educacion=opciones_educacion,
+                        opciones_tecnologias=opciones_tecnologias,
+                        opciones_habilidades=opciones_habilidades,
+                        precargado=info
+                    )
+                except Exception:
+                    flash("❌El archivo no es un PDF válido o está dañado.", category="pdf")
+                    return redirect("/cargarCV")
+                
             else:
-                flash("Debes seleccionar un archivo PDF válido para continuar.")
+                flash("❌Debes seleccionar un archivo PDF válido para continuar.", category="pdf")
                 return redirect("/cargarCV")
 
         # Si no es carga de PDF, procesar formulario normalmente
@@ -1102,7 +1063,7 @@ def cargarCV():
         idOfer = request.form.get("idOfer")
 
         if not idOfer:
-            flash("Debes seleccionar una oferta laboral.")
+            flash("❌Debes seleccionar una oferta laboral.", category="form")
             return redirect("/cargarCV")
 
         try:
@@ -1111,7 +1072,7 @@ def cargarCV():
             habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
 
             if not educacion_obj or not tecnologia_obj or not habilidad_obj:
-                flash("Error: Valores inválidos seleccionados.")
+                flash("❌Error: Valores inválidos seleccionados.", category="form")
                 return redirect("/cargarCV")
 
             idedu = educacion_obj.idedu
@@ -1134,9 +1095,9 @@ def cargarCV():
             )
             db.session.add(nuevo_candidato_db)
             db.session.commit()
-            flash(f"Candidato {nombre} guardado correctamente y asociado a la oferta laboral '{OfertaLaboral.query.get(idOfer).nombre}'.")
+            flash(f"✔️Candidato {nombre} guardado correctamente y asociado a la oferta laboral '{OfertaLaboral.query.get(idOfer).nombre}'.", category="form")
         except Exception as e:
-            flash(f"Este mail ya había sido registrado en esta postulación")
+            flash(f"❌Este mail ya estaba registrado en esta postulación", category="form")
             return redirect("/cargarCV")
 
     return render_template(
@@ -1147,124 +1108,6 @@ def cargarCV():
         opciones_habilidades=opciones_habilidades
     )
 
-"""
-@app.route("/cargarCV", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH"])
-def cargarCV():
-    nombre, apellido, email, telefono, ubicacion, experiencia, educacion, tecnologias, habilidades, idOfer = "", "", "", "", "", "", "", "", "", ""
-
-    # Obtener todas las ofertas laborales disponibles
-    opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
-    opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
-    opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
-    opciones_habilidades = [habilidad.nombre for habilidad in Habilidad.query.all()]
-
-    session["opciones_ofertas"] = opciones_ofertas
-    session["opciones_educacion"] = opciones_educacion
-    session["opciones_tecnologias"] = opciones_tecnologias
-    session["opciones_habilidades"] = opciones_habilidades
-
-    if request.method == "POST":
-        print("✅ Solicitud POST recibida")  # 💡 Verifica que Flask está recibiendo POST
-
-        # 🔍 Debug: Ver qué datos y archivos llegan al servidor
-        print(f"🔍 Datos recibidos en POST: {request.form.to_dict()}")
-        print(f"🔍 Archivos recibidos en POST: {request.files.to_dict()}")
-
-        accion = request.form.get("accion")  # 🔍 Diferenciar si es "confirmar" o "enviar"
-        print(f"🔹 Acción recibida: {accion}")  # 💡 Verifica si llega "confirmar"
-
-        idOfer = request.form.get("idOfer")
-        habilidades = request.form["habilidades"]  # 🎯 Captura de habilidades seleccionadas por el usuario
-
-        cv_pdf = request.files.get("cv_pdf")
-        if not cv_pdf:
-            print("⚠️ No se recibió ningún archivo PDF.")
-
-        if not idOfer:
-            flash("Debes seleccionar una oferta laboral.")
-            return redirect("/cargarCV")
-
-        if accion == "confirmar":  # 🎯 Acción "Confirmar": extraer datos sin enviarlos a la BD
-            if cv_pdf and cv_pdf.filename.endswith(".pdf"):
-                pdf_path = f"uploads/{cv_pdf.filename}"
-                cv_pdf.save(pdf_path)
-                if not os.path.exists(pdf_path):
-                    print("⚠️ El archivo PDF no se guardó correctamente.")  # 💡 Depuración
-                else:
-                    print("⚠️ El archivo PDF no se guardó.")
-                text = extract_text_from_pdf(pdf_path)
-                print(f"📄 Texto extraído del PDF:\n{text}")  # 💡 Verifica si el PDF tiene contenido
-                info = extract_info(text)
-                print(f"🔍 Datos extraídos: {info}")  # 💡 Verifica qué información encontró
-                # 🔍 Verifica si se extrajo información
-                if not info or not any(info.values()):
-                    flash("⚠️ No se pudo extraer información del PDF. Verifica el archivo.")
-                    return redirect("/cargarCV")  # 🚨 Evita continuar si la extracción falló
-                
-                nombre = info["nombre"]
-                apellido = info["apellido"]
-                email = info["email"]
-                telefono = info["telefono"]
-                ubicacion = info["ubicacion"]
-                experiencia = info["experiencia"]
-                educacion = info["educacion"]
-                tecnologias = info["tecnologia"]
-            
-        elif accion == "enviar":  # 🎯 Acción "Enviar": ahora sí se guarda el candidato en la BD
-            try:
-                # Buscar el ID correspondiente en las tablas
-                educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
-                tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
-                habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
-
-                if not educacion_obj or not tecnologia_obj or not habilidad_obj:
-                    flash("Error: Algunos valores seleccionados no son válidos. Revisa tu selección.")
-                    return redirect("/cargarCV")
-
-                idedu = educacion_obj.idedu
-                idtec = tecnologia_obj.idtec
-                idhab = habilidad_obj.idhab
-
-                # Crear y guardar el candidato con la oferta laboral seleccionada
-                nuevo_candidato_db = Candidato(
-                    id=email + idOfer,
-                    nombre=nombre,
-                    apellido=apellido,
-                    mail=email,
-                    telefono=telefono,
-                    ubicacion=ubicacion,
-                    experiencia=experiencia,
-                    idedu=idedu,
-                    idtec=idtec,
-                    idhab=idhab,
-                    idOfer=idOfer,  # Asociación con la oferta laboral
-                    aptitud=None
-                )
-                db.session.add(nuevo_candidato_db)
-                db.session.commit()
-                flash(f"Candidato {nombre} guardado correctamente y asociado a la oferta laboral '{OfertaLaboral.query.get(idOfer).nombre}'.")
-            except Exception:
-                flash("Este mail ya había sido registrado en esta postulación.")
-                return redirect("/cargarCV")
-            
-    return render_template("cargarCV.html",
-        opciones_ofertas=opciones_ofertas,
-        opciones_educacion=opciones_educacion,
-        opciones_tecnologias=opciones_tecnologias,
-        opciones_habilidades=opciones_habilidades,
-        nombre=nombre,
-        apellido=apellido,
-        email=email,
-        telefono=telefono,
-        ubicacion=ubicacion,
-        experiencia=experiencia,
-        educacion=educacion,
-        tecnologias=tecnologias,
-        habilidades=habilidades,  # 🎯 Se pasa al renderizado de HTML
-        idOfer=idOfer
-    )
-"""
 
 @app.route("/etiquetas", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])

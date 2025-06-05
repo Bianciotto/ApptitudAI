@@ -125,9 +125,17 @@
 
     <form method="POST" enctype="multipart/form-data">
       <h2>Subir CV en PDF</h2>
-      <label for="cv_pdf">CV en PDF:</label>
       <input type="file" name="cv_pdf" accept=".pdf" required>
       <button type="submit">Extraer datos del CV</button>
+      {% with messages = get_flashed_messages(category_filter=["pdf"]) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for message in messages %}
+              <div class="alert">{{ message|safe }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
     </form>
 
     <form method="POST" action="/cargarCV" enctype="multipart/form-data">
@@ -177,7 +185,7 @@
         
         <label for="tecnologias">Tecnologías</label>
         <select name="tecnologias" id="tecnologias" required>
-            <option disabled selected value="">-- Selecciona la tecnologia que mejor domina --</option>
+            <option disabled selected value="">-- Selecciona la tecnología que mejor domina --</option>
             {% for opcion in opciones_tecnologias %}
                 <option value="{{ opcion }}" {% if precargado and precargado.tecnologias == opcion %}selected{% endif %}>{{ opcion }}</option>
             {% endfor %}
@@ -191,16 +199,16 @@
             {% endfor %}
         </select>
        
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="flash-messages">
-            {% for message in messages %}
-                <div class="alert">{{ message|safe }}</div>
-            {% endfor %}
-            </div>
-        {% endif %}
-        {% endwith %}
         <button type="submit">Enviar CV</button>
+        {% with messages = get_flashed_messages(category_filter=["form"]) %}
+          {% if messages %}
+              <div class="flash-messages">
+              {% for message in messages %}
+                  <div class="alert">{{ message|safe }}</div>
+              {% endfor %}
+              </div>
+          {% endif %}
+        {% endwith %}
         
     </form>
 </body>
