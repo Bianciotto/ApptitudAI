@@ -939,24 +939,68 @@ def extraer_info_cv_pdf(file_storage):
     if telefono:
         numero = re.sub(r"\D", "", telefono.group())  # quitar todo lo que no sea dígito
         if len(numero) >= 8:
-            info["telefono"] = telefono.group()
+            info["telefono"] = numero
 
-    # Nombre y Apellido (heurística básica)
+
+    # Nombre y Apellido con validación en una o dos líneas en MAYÚSCULAS
+    def es_nombre_o_apellido_valido(palabra):
+        return palabra.isalpha() and (palabra.istitle() or palabra.isupper())
+
     lineas = texto.strip().split("\n")
-    for linea in lineas:
-        if len(linea.split()) >= 2 and not re.search(r"[@\d]", linea):
-            nombres = linea.strip().split()
-            nombre = " ".join(nombres[:2])
-            apellido = " ".join(nombres[2:4]) if len(nombres) > 2 else ""
-            info['nombre'] = nombre.title()
-            info['apellido'] = apellido.title()
-            break
+    primeras_lineas = lineas[:5]  # Priorizamos las primeras líneas
+
+    nombre, apellido = None, None
+
+    # Paso 1: Revisar la primera línea
+    primera_linea = primeras_lineas[0].strip()
+    if primera_linea.isupper() and all(p.isalpha() for p in primera_linea.split()):
+        palabras = primera_linea.split()
+        if len(palabras) >= 2:
+            nombre = " ".join(palabras[:2]).title()
+            apellido = " ".join(palabras[2:4]).title() if len(palabras) > 2 else ""
+
+    # Paso 2: Buscar nombres y apellidos en dos líneas consecutivas si no se encontraron antes
+    if not nombre or not apellido:
+        for i in range(len(primeras_lineas) - 1):
+            palabras_actual = primeras_lineas[i].strip().split()
+            palabras_siguiente = primeras_lineas[i + 1].strip().split()
+
+            validas_actual = [p for p in palabras_actual if es_nombre_o_apellido_valido(p)]
+            validas_siguiente = [p for p in palabras_siguiente if es_nombre_o_apellido_valido(p)]
+
+            if len(validas_actual) >= 1 and len(validas_siguiente) >= 1:
+                nombre = " ".join(validas_actual).title()
+                apellido = " ".join(validas_siguiente).title()
+                break
+
+    # Paso 3: Si sigue sin detectarse, buscar en una sola línea
+    if not nombre or not apellido:
+        for linea in primeras_lineas:
+            palabras = linea.strip().split()
+            validas = [p for p in palabras if es_nombre_o_apellido_valido(p)]
+            if len(validas) >= 2:
+                nombre = " ".join(validas[:2]).title()
+                apellido = " ".join(validas[2:4]).title() if len(validas) > 2 else ""
+                break
+
+    if nombre:
+        info["nombre"] = nombre
+    if apellido:
+        info["apellido"] = apellido
 
     # Educación
-    niveles_ordenados = ["Postgrado", "Universitario", "Secundario"]
-    for nivel in niveles_ordenados:
-        if nivel.lower() in texto.lower():
-            info["educacion"] = nivel
+    niveles_equivalentes = {
+        "Postgrado": ["postgrado", "maestría", "doctorado", "posgrado"],
+        "Universitario": ["universitario", "universidad", "universitaria", "licenciatura", "ingeniería", "ingeniero", "grado"],
+        "Secundario": ["secundario", "bachiller", "escuela secundaria", "nivel medio"]
+    }
+
+    for nivel, palabras_clave in niveles_equivalentes.items():
+        for palabra in palabras_clave:
+            if palabra in texto.lower():
+                info["educacion"] = nivel
+                break
+        if "educacion" in info:
             break
 
     # Tecnologías (primer match)
