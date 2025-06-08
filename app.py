@@ -220,10 +220,10 @@ def abrir_navegador():
 
 
 def obtener_correos_aptos(idOfer):
-    return [c.mail for c in Candidato.query.filter_by(idOfer=idOfer, aptitud=True).all()]
+    return [(c.nombre, c.mail) for c in Candidato.query.filter_by(idOfer=idOfer, aptitud=True).all()]
 
 def obtener_correos_noaptos(idOfer):
-    return [c.mail for c in Candidato.query.filter_by(idOfer=idOfer, aptitud=False).all()]
+    return [(c.nombre, c.mail) for c in Candidato.query.filter_by(idOfer=idOfer, aptitud=False).all()]
 
 
 
@@ -310,24 +310,22 @@ def enviar_correos():
     #mails a candidatos aptos
     destinatariosAptos = obtener_correos_aptos()
     with email.connect() as conn:
-        for mail in destinatariosAptos:
+        for nombre, mail in destinatariosAptos:
             mensaje = Message(subject='Oportunidad laboral',
                               sender=app.config['MAIL_USERNAME'],
                               recipients=[mail],
-                              body='Hola, hemos revisado tu curriculum y estamos interesados en tu perfil.')
+                              body=f"Hola {nombre},\n\nHemos revisado tu perfil y estamos interesados en tu candidatura.\n¡Gracias por postularte!")
             conn.send(mensaje)
     #mails a candidatos no aptos
     destinatariosNoAptos = obtener_correos_noaptos()
     with email.connect() as conn:
-        for mail in destinatariosNoAptos:
+        for nombre, mail in destinatariosNoAptos:
             mensaje = Message(subject='Oportunidad laboral',
                                 sender=app.config['MAIL_USERNAME'],
                                 recipients=[mail],
-                                body='Hola, lamentamos que en esta oportunidad tu perfil no se ajusta a lo que buscamos.')
+                                body=f"Hola {nombre},\n\nLamentamos informarte que en esta oportunidad tu perfil no se ajusta a lo que buscamos.\nTe animamos a postularte en futuras oportunidades.")
             conn.send(mensaje)
     return redirect('/predecir')     
-
-
 
 
 
@@ -774,22 +772,20 @@ def enviar_correos_automatica(idOfer):
     destinatariosNoAptos = obtener_correos_noaptos(idOfer)
 
     with email.connect() as conn:
-        for mail in destinatariosAptos:
+        for nombre, mail in destinatariosAptos:
             mensaje = Message(
                 subject="Oportunidad laboral",
                 sender=app.config["MAIL_USERNAME"],
                 recipients=[mail],
-                body="Hola, hemos revisado tu perfil y estamos interesados en tu candidatura."
-            )
+                body=f"Hola {nombre},\n\nHemos revisado tu perfil y estamos interesados en tu candidatura.\n¡Gracias por postularte!")
             conn.send(mensaje)
 
-        for mail in destinatariosNoAptos:
+        for nombre, mail in destinatariosNoAptos:
             mensaje = Message(
                 subject="Oportunidad laboral",
                 sender=app.config["MAIL_USERNAME"],
                 recipients=[mail],
-                body="Hola, lamentamos informarte que en esta oportunidad tu perfil no se ajusta a lo que buscamos."
-            )
+                body=f"Hola {nombre},\n\nLamentamos informarte que en esta oportunidad tu perfil no se ajusta a lo que buscamos.\nTe animamos a postularte en futuras oportunidades.")
             conn.send(mensaje)
 
 

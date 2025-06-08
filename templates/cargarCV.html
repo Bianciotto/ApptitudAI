@@ -153,16 +153,16 @@
         </select>
 
         <label for="nombre">Nombre</label>
-        <input type="text" name="nombre" value="{{ precargado.nombre if precargado and precargado.nombre else '' }}" required>
+        <input type="text" name="nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' ]{2,20}" title="Debe tener entre 2 y 20 letras, puede incluir espacios o apóstrofes" value="{{ precargado.nombre if precargado and precargado.nombre else '' }}" required>
         
         <label for="apellido">Apellido</label>
-        <input type="text" name="apellido" value="{{ precargado.apellido if precargado and precargado.apellido else '' }}" required>
+        <input type="text" name="apellido" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' ]{2,20}" title="Debe tener entre 2 y 20 letras, puede incluir espacios o apóstrofes" value="{{ precargado.apellido if precargado and precargado.apellido else '' }}" required>
 
         <label for="email">Correo eléctronico</label>
         <input type="email" name="email" value="{{ precargado.email if precargado and precargado.email else '' }}" required>
 
         <label for="telefono">Teléfono</label>
-        <input type="text" name="telefono" pattern="\d{8,10}" maxlength="10" title="Debe tener entre 8 y 10 números" value="{{ precargado.telefono if precargado and precargado.telefono else '' }}" required>
+        <input type="text" name="telefono" pattern="\d{8,13}" maxlength="13" title="Debe tener entre 8 y 13 números" value="{{ precargado.telefono if precargado and precargado.telefono else '' }}" required>
 
         <label for="ubicacion">Ubicación</label>
         <select name="ubicacion" id="ubicacion" required>
