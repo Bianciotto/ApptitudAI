@@ -8,6 +8,8 @@ import threading
 import joblib
 import os
 import sys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from flask_sqlalchemy import SQLAlchemy
 import sqlite3
@@ -677,6 +679,7 @@ def estadisticas():
 @app.route("/predecir", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])
 def predecir():
+    plt.close('all')
     if request.method == "POST":
 
         # Verifica que el archivo esté en la solicitud
@@ -686,7 +689,7 @@ def predecir():
         file = request.files["archivo_csv"]
         if file.filename == "":
             return "No seleccionaste ningún archivo."
-
+        
         try:
             # Leer el archivo CSV
             dataSet = pd.read_csv(file)
