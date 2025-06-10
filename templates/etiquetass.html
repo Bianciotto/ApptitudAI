@@ -144,18 +144,25 @@
 
 
     {% if oferta %}
-      <h1>Etiquetas para<span class="subtitulo">"{{ oferta.nombre }}"</span></h1>
+       <h1>Etiquetas para  <span class="subtitulo">"{{ oferta.nombre }}"</span></h1>
         
-      <h3 class="titulo-centrado">Educación</h3>
-      {{ tabla_edu|safe }}
+        <h3 class="titulo-centrado">Educación</h3>
+          {{ tabla_edu|safe }}
 
-      <h3 class="titulo-centrado">Tecnologías</h3>
-      {{ tabla_tec|safe }}
+        <h3 class="titulo-centrado">Tecnologías</h3>
+        {{ tabla_tec|safe }}
 
-      <h3 class="titulo-centrado">Habilidades</h3>
-      {{ tabla_hab|safe }}
+        <h3 class="titulo-centrado">Tecnologías 2</h3>
+        {{ tabla_tec2|safe }}
+
+        <h3 class="titulo-centrado">Habilidades</h3>
+        {{ tabla_hab|safe }}
+
+        <h3 class="titulo-centrado">Habilidades 2</h3>
+        {{ tabla_hab2|safe }}
+
     {% else %}
-      <p>No hay ofertas laborales disponibles.</p>
+        <p>No hay ofertas laborales disponibles.</p>
     {% endif %}
     
     <!--<hr class="my-4">-->
@@ -194,6 +201,19 @@
                 <input type="number" name="valor_tecnologia" class="form-control mt-2" min="0" max="3" placeholder="Importancia">
             </div>
             <div class="col-md-4">
+                <label for="tecnologia2_id" class="form-label">Tecnología2:</label>
+                <select name="tecnologia2_id" class="form-select">
+                    {% if tecnologias2 %}
+                        {% for t2 in tecnologias2 %}
+                            <option value="{{ t2.idTec2 }}">{{ t2.tecnologia2.nombre }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option disabled>No hay etiquetas de tecnología2</option>
+                    {% endif %}
+                </select>
+                <input type="number" name="valor_tecnologia" class="form-control mt-2" min="0" max="3" placeholder="Importancia">
+            </div>
+            <div class="col-md-4">
                 <label for="habilidad_id" class="form-label">Habilidad:</label>
                 <select name="habilidad_id" class="form-select">
                     {% if habilidades %}
@@ -202,6 +222,20 @@
                         {% endfor %}
                     {% else %}
                         <option disabled>No hay etiquetas de habilidades</option>
+                    {% endif %}
+                </select>
+                <input type="number" name="valor_habilidad" class="form-control mt-2" min="0" max="3" placeholder="Importancia">
+            </div>
+        </div>
+        <div class="col-md-4">
+                <label for="habilidad2_id" class="form-label">Habilidad2:</label>
+                <select name="habilidad2_id" class="form-select">
+                    {% if habilidades2 %}
+                        {% for h2 in habilidades2 %}
+                            <option value="{{ h2.idHab2 }}">{{ h2.habilidad2.nombre }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option disabled>No hay etiquetas de habilidades2</option>
                     {% endif %}
                 </select>
                 <input type="number" name="valor_habilidad" class="form-control mt-2" min="0" max="3" placeholder="Importancia">
