@@ -118,6 +118,7 @@
         <span></span>
         <span></span>
         <span></span>
+        
         <label for="nombre">Nombre de la oferta:</label>
         <input type="text" name="nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' 0-9]{4,51}" required>
 
@@ -127,11 +128,18 @@
         <label for="max_candidatos">Cantidad máxima de candidatos:</label>
         <input type="number" name="max_candidatos" min="4" max="1000" required>
 
-        <label for="remuneracion">Remuneración($USD):</label>
+        <label for="remuneracion">Remuneración ($USD):</label>
         <input type="number" name="remuneracion" placeholder="Ej: 4000" min="200" max="90000" required>
 
         <label for="beneficio">Beneficio:</label>
         <input type="text" name="beneficio" placeholder="Ej: Home office" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' 0-9]{3,60}" required>
+
+        <label for="modalidad">Modalidad de la oferta:</label>
+        <select name="modalidad" required>
+            <option value="Local">Local</option>
+            <option value="Mixta">Mixta</option>
+            <option value="Externa">Externa</option>
+        </select>
 
         <p>Usuario responsable: <strong>{{ session.get('username') }}</strong></p>
 
@@ -146,6 +154,7 @@
         {% endwith %}
         <button type="submit">Crear Oferta</button>
     </form>
+
 
     <footer class="footer">
     <div class="footer-content">

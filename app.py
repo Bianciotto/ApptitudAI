@@ -52,6 +52,13 @@ class Candidato(db.Model):
     mail = db.Column(db.String(100), nullable=False, unique=True)
     telefono = db.Column(db.String(50), nullable=False)
     ubicacion = db.Column(db.String(100), nullable=False)
+    
+    experiencia = db.Column(db.Integer, nullable=True) 
+    idedu = db.Column(db.Integer, db.ForeignKey("educacion.idedu"), nullable=True)
+    idtec = db.Column(db.Integer, db.ForeignKey("tecnologia.idtec"), nullable=True)
+    idtec2 = db.Column(db.Integer, db.ForeignKey("tecnologia2.idtec2"), nullable=True)
+    idhab = db.Column(db.Integer, db.ForeignKey("habilidad.idhab"), nullable=True)
+    idhab2 = db.Column(db.Integer, db.ForeignKey("habilidad2.idhab2"), nullable=True)
 
     postulaciones = db.relationship("Postulacion", back_populates="candidato", cascade="all, delete-orphan")
 
@@ -84,6 +91,7 @@ class OfertaLaboral(db.Model):
     remuneracion = db.Column(db.String(50), nullable=False)
     beneficio = db.Column(db.String(200), nullable=True)
     estado = db.Column(db.String(50), nullable=False, default="Activa")
+    modalidad = db.Column(db.String(20), nullable=False)
     usuario_responsable = db.Column(db.String(100), nullable=False)
 
     postulaciones = db.relationship("Postulacion", back_populates="oferta", cascade="all, delete-orphan", lazy=True)
@@ -198,7 +206,7 @@ def get_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-'''
+
 # Crear la base de datos y agregar usuarios ficticios si no existen
 with app.app_context():
     db.create_all()
@@ -249,55 +257,7 @@ with app.app_context():
     db.session.commit()
     print("Usuarios ficticios creados con éxito.")
 
-    # 📌 Crear candidatos ficticios SIN referencia a `idOfer`
-    candidatos_ficticios = [
-        {"mail": "candidato1@gmail.com", "nombre": "Carlos", "apellido": "Pérez", "telefono": "12345678", "ubicacion": "Buenos Aires"},
-        {"mail": "candidato2@gmail.com", "nombre": "Ana", "apellido": "Gómez", "telefono": "87654321", "ubicacion": "Córdoba"},
-        {"mail": "candidato3@gmail.com", "nombre": "Juan", "apellido": "Fernández", "telefono": "45678912", "ubicacion": "Mendoza"},
-    ]
 
-    for c in candidatos_ficticios:
-        nuevo_candidato = Candidato(
-            id=c["mail"],
-            nombre=c["nombre"],
-            apellido=c["apellido"],
-            mail=c["mail"],
-            telefono=c["telefono"],
-            ubicacion=c["ubicacion"]
-        )
-        db.session.merge(nuevo_candidato)
-
-    db.session.commit()
-    print("Candidatos ficticios creados con éxito.")
-
-    # 📌 Crear postulaciones ficticias
-    ofertas_disponibles = OfertaLaboral.query.all()  # Obtener ofertas activas
-
-    if ofertas_disponibles:
-        postulaciones_ficticias = [
-            {"candidato_id": "candidato1@gmail.com", "idOfer": ofertas_disponibles[0].idOfer, "experiencia": 5, "idedu": 1, "idtec": 2, "idhab": 3, "idtec2": 1, "idhab2": 2, "aptitud": None, "puntaje": 0},
-            {"candidato_id": "candidato2@gmail.com", "idOfer": ofertas_disponibles[1].idOfer, "experiencia": 3, "idedu": 2, "idtec": 1, "idhab": 2, "idtec2": 2, "idhab2": 3, "aptitud": None, "puntaje": 0},
-            {"candidato_id": "candidato3@gmail.com", "idOfer": ofertas_disponibles[2].idOfer, "experiencia": 7, "idedu": 3, "idtec": 3, "idhab": 1, "idtec2": 3, "idhab2": 1, "aptitud": None, "puntaje": 0},
-        ]
-
-        for p in postulaciones_ficticias:
-            nueva_postulacion = Postulacion(
-                idCandidato=p["candidato_id"],
-                idOfer=p["idOfer"],
-                experiencia=p["experiencia"],
-                idedu=p["idedu"],
-                idtec=p["idtec"],
-                idhab=p["idhab"],
-                idtec2=p["idtec2"],
-                idhab2=p["idhab2"],
-                aptitud=p["aptitud"],
-                puntaje=p["puntaje"]
-            )
-            db.session.merge(nueva_postulacion)
-
-        db.session.commit()
-        print("Postulaciones ficticias creadas con éxito.")
-'''
 
 # Cargar el modelo correctamente
 modelo_path = get_path("modelo_candidatos.pkl")
@@ -322,10 +282,14 @@ def abrir_navegador():
 
 
 def obtener_correos_aptos(idOfer):
-    return [(c.nombre, c.mail) for c in Candidato.query.filter_by(idOfer=idOfer, aptitud=True).all()]
+    postulaciones = Postulacion.query.filter_by(idOfer=idOfer, aptitud=True).all()  # 📌 Filtrar postulaciones aptas
+    return [(p.candidato.nombre, p.candidato.mail) for p in postulaciones if p.candidato]  # 📌 Acceder al candidato correctamente
+
 
 def obtener_correos_noaptos(idOfer):
-    return [(c.nombre, c.mail) for c in Candidato.query.filter_by(idOfer=idOfer, aptitud=False).all()]
+    postulaciones = Postulacion.query.filter_by(idOfer=idOfer, aptitud=False).all()  # 📌 Filtrar postulaciones no aptas
+    return [(p.candidato.nombre, p.candidato.mail) for p in postulaciones if p.candidato]  # 📌 Acceder correctamente
+
 
 
 
@@ -563,14 +527,20 @@ def crear_oferta():
             nombre = request.form.get("nombre")
             fecha_cierre_str = request.form.get("fecha_cierre")
             max_candidatos = int(request.form.get("max_candidatos"))
-            remuneracion = "$" + request.form.get("remuneracion")  # 💰 Agregar "$"
-            beneficio = request.form.get("beneficio")  # 🎁 Recibir beneficio
-            usuario_responsable = session.get("username")  # 👤 Obtener usuario logueado
+            remuneracion = "$" + request.form.get("remuneracion") 
+            beneficio = request.form.get("beneficio")  
+            usuario_responsable = session.get("username")  
+            modalidad = request.form.get("modalidad")  
             fecha_cierre = datetime.strptime(fecha_cierre_str, "%Y-%m-%d")
 
-            # 🔹 Verificar si el nombre ya existe
+            #  Verificar si el nombre ya existe
             if OfertaLaboral.query.filter_by(nombre=nombre).first():
                 flash(f"Error: La oferta '{nombre}' ya existe. Elige un nombre diferente.")
+                return redirect("/crear_oferta")
+
+            #  Validar modalidad antes de crear la oferta
+            if modalidad not in ["Local", "Mixta", "Externa"]:
+                flash("❌ Modalidad inválida. Debe ser 'Local', 'Mixta' o 'Externa'.", "error")
                 return redirect("/crear_oferta")
 
             nueva_oferta = OfertaLaboral(
@@ -579,13 +549,14 @@ def crear_oferta():
                 max_candidatos=max_candidatos,
                 remuneracion=remuneracion,
                 beneficio=beneficio,
-                estado="Activa",  # 🔄 Siempre comienza como "Activa"
+                estado="Activa",  #  Siempre comienza como "Activa"
+                modalidad=modalidad,  #  Guardamos la modalidad
                 usuario_responsable=usuario_responsable
             )
             db.session.add(nueva_oferta)
-            db.session.flush()  # 🔹 Garantizar que obtenemos el ID antes de insertar etiquetas
+            db.session.flush()  #  Garantizar que obtenemos el ID antes de insertar etiquetas
 
-            # 🔹 Cargar encoders
+           
             encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
             encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
             encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
@@ -613,16 +584,17 @@ def crear_oferta():
                 nueva_relacion = OfertaHabilidad2(idOfer=nueva_oferta.idOfer, idHab2=idx, importancia=0)
                 db.session.add(nueva_relacion)
 
-            db.session.commit()  # 🔹 Guardar todas las asociaciones
-            flash(f"Oferta '{nombre}' creada con éxito 🎉 con estado '{nueva_oferta.estado}' y etiquetas asignadas", "success")
+            db.session.commit()  
+            flash(f"Oferta '{nombre}' creada con éxito 🎉 con estado '{nueva_oferta.estado}', modalidad '{nueva_oferta.modalidad}' y etiquetas asignadas", "success")
             return redirect("/crear_oferta")
         
         except Exception as e:
-            db.session.rollback()  # 🔄 Revierte cambios si hay error
-            flash(f"Error al crear la oferta: {str(e)}")
+            db.session.rollback()  
+            flash(f"Error al crear la oferta: {str(e)}", "error")
             return redirect("/crear_oferta")
 
     return render_template("crear_oferta.html")
+
 
 @app.route("/ver_ofertas")
 @login_required(roles=["Admin_RRHH"])
@@ -904,43 +876,44 @@ def postulantes():
     return render_template("postulantes.html", tabla=tabla_html, ofertas=OfertaLaboral.query.all(), idOfer=idOfer)
 
 
-
 def predecir_postulantes_automatica(idOfer):
-    candidatos = Candidato.query.filter_by(idOfer=idOfer).all()
+    # 📌 Obtener las postulaciones de la oferta
+    postulaciones = Postulacion.query.filter_by(idOfer=idOfer).all()
 
-    if not candidatos:
+    if not postulaciones:
         return
 
     modelo = joblib.load(get_path("modelo_candidatos.pkl"))
 
     X = pd.DataFrame([{
-        "Educacion": c.idedu,
-        "Tecnologías": c.idtec,
-        "Tecnologías2": c.idtec2,
-        "Habilidades": c.idhab,
-        "Habilidades2": c.idhab2
-    } for c in candidatos])
+        "Educacion": p.candidato.idedu,
+        "Tecnologías": p.candidato.idtec,
+        "Tecnologías2": p.candidato.idtec2,
+        "Habilidades": p.candidato.idhab,
+        "Habilidades2": p.candidato.idhab2
+    } for p in postulaciones])
 
     predicciones = modelo.predict(X)
 
-    for i, candidato in enumerate(candidatos):
-        candidato.aptitud = bool(predicciones[i])  # 🔹 Convertir predicción a `True` o `False`
-        db.session.add(candidato)
+    for i, postulacion in enumerate(postulaciones):
+        postulacion.aptitud = bool(predicciones[i])  # 🔹 Ahora asignamos `aptitud` a `Postulacion`, no `Candidato`
+        db.session.add(postulacion)
 
     db.session.commit()
 
 
 def asignar_puntajes_automatica(idOfer):
-    candidatos = Candidato.query.filter_by(idOfer=idOfer, aptitud=True).all()
+    postulaciones = Postulacion.query.filter_by(idOfer=idOfer, aptitud=True).all()  # 🔹 Filtrar postulaciones aptas
 
-    if not candidatos:
+    if not postulaciones:
         return
 
-    for c in candidatos:
-        c.puntaje = calcular_puntaje(c)
-        db.session.add(c)
+    for p in postulaciones:
+        p.puntaje = calcular_puntaje(p.candidato)  # 🔹 Asignamos puntaje a la `Postulacion`, no a `Candidato`
+        db.session.add(p)  # 🔹 Agregamos la postulación actualizada
 
-    db.session.commit()
+    db.session.commit()  # 🔹 Guardamos cambios en la base de datos
+
 
 
 def enviar_correos_automatica(idOfer):
@@ -963,7 +936,6 @@ def enviar_correos_automatica(idOfer):
                 recipients=[mail],
                 body=f"Hola {nombre},\n\nLamentamos informarte que en esta oportunidad tu perfil no se ajusta a lo que buscamos.\nTe animamos a postularte en futuras oportunidades.")
             conn.send(mensaje)
-
 
 
 @app.route("/predecir_postulantes", methods=["POST"])
@@ -1052,31 +1024,35 @@ def calcular_puntaje(candidato):
 
     puntaje += candidato.experiencia * 2
 
-    if candidato.idOfer:  # Asegurarse de que el candidato esté vinculado a una oferta laboral
+    # 📌 Obtener la postulación más reciente del candidato
+    postulacion = Postulacion.query.filter_by(idCandidato=candidato.id).order_by(Postulacion.idPostulacion.desc()).first()
+
+    if postulacion:  # 🔹 Verificar que hay una postulación válida
         # Obtener la importancia desde OfertaEducacion
-        edu_rel = OfertaEducacion.query.filter_by(idOfer=candidato.idOfer, idEdu=candidato.idedu).first()
+        edu_rel = OfertaEducacion.query.filter_by(idOfer=postulacion.idOfer, idEdu=candidato.idedu).first()
         if edu_rel:
             puntaje += edu_rel.importancia * 3
 
         # Obtener la importancia desde OfertaTecnologia
-        tec_rel = OfertaTecnologia.query.filter_by(idOfer=candidato.idOfer, idTec=candidato.idtec).first()
+        tec_rel = OfertaTecnologia.query.filter_by(idOfer=postulacion.idOfer, idTec=candidato.idtec).first()
         if tec_rel:
             puntaje += tec_rel.importancia * 5
             
-        tec2_rel = OfertaTecnologia2.query.filter_by(idOfer=candidato.idOfer, idTec2=candidato.idtec2).first()
+        tec2_rel = OfertaTecnologia2.query.filter_by(idOfer=postulacion.idOfer, idTec2=candidato.idtec2).first()
         if tec2_rel:
             puntaje += tec2_rel.importancia * 5
 
         # Obtener la importancia desde OfertaHabilidad
-        hab_rel = OfertaHabilidad.query.filter_by(idOfer=candidato.idOfer, idHab=candidato.idhab).first()
+        hab_rel = OfertaHabilidad.query.filter_by(idOfer=postulacion.idOfer, idHab=candidato.idhab).first()
         if hab_rel:
             puntaje += hab_rel.importancia * 2
             
-        hab2_rel = OfertaHabilidad2.query.filter_by(idOfer=candidato.idOfer, idHab2=candidato.idhab2).first()
+        hab2_rel = OfertaHabilidad2.query.filter_by(idOfer=postulacion.idOfer, idHab2=candidato.idhab2).first()
         if hab2_rel:
             puntaje += hab2_rel.importancia * 2
 
     return puntaje
+
 
 
 def extraer_info_cv_pdf(file_storage):
@@ -1278,15 +1254,6 @@ def cargarCV():
             file = request.files["cv_pdf"]
             
             if file and file.filename.endswith(".pdf"):
-                # Validar tamaño (máx. 5MB)
-                file.seek(0, os.SEEK_END)
-                size = file.tell()
-                file.seek(0)
-
-                if size > 5 * 1024 * 1024:
-                    flash("❌El archivo excede el tamaño máximo permitido de 5 MB.", category="pdf")
-                    return redirect("/cargarCV")
-                
                 try:
                     info = extraer_info_cv_pdf(file)
                     flash("✔️Información extraída exitosamente del archivo PDF.", category="pdf")
@@ -1307,7 +1274,7 @@ def cargarCV():
             else:
                 flash("❌Debes seleccionar un archivo PDF válido para continuar.", category="pdf")
                 return redirect("/cargarCV")
-            
+
         # 📌 Obtener datos del formulario
         nombre = request.form["nombre"]
         apellido = request.form["apellido"]
@@ -1330,19 +1297,6 @@ def cargarCV():
             # 📌 Buscar el candidato en la base de datos (evitar duplicaciones)
             candidato = Candidato.query.filter_by(mail=email).first()
 
-            if not candidato:
-                # 🔹 Crear un nuevo candidato si no existe
-                candidato = Candidato(
-                    id=email,
-                    nombre=nombre,
-                    apellido=apellido,
-                    mail=email,
-                    telefono=telefono,
-                    ubicacion=ubicacion
-                )
-                db.session.add(candidato)
-                db.session.flush()  # Para obtener el ID antes de la postulación
-
             # 📌 Buscar IDs correspondientes
             educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
             tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
@@ -1354,22 +1308,50 @@ def cargarCV():
                 flash("Error: Valores inválidos seleccionados.")
                 return redirect("/cargarCV")
 
-            # 📌 Crear una nueva **Postulación** asociando el candidato con la oferta laboral
+            if candidato:
+                # 📌 Si el candidato ya existe, actualizar sus datos
+                candidato.experiencia = experiencia
+                candidato.idedu = educacion_obj.idedu
+                candidato.idtec = tecnologia_obj.idtec
+                candidato.idtec2 = tecnologia2_obj.idtec2
+                candidato.idhab = habilidad_obj.idhab
+                candidato.idhab2 = habilidad2_obj.idhab2
+                db.session.add(candidato)
+            else:
+                # 📌 Crear un nuevo candidato
+                candidato = Candidato(
+                    id=email,
+                    nombre=nombre,
+                    apellido=apellido,
+                    mail=email,
+                    telefono=telefono,
+                    ubicacion=ubicacion,
+                    experiencia=experiencia,
+                    idedu=educacion_obj.idedu,
+                    idtec=tecnologia_obj.idtec,
+                    idtec2=tecnologia2_obj.idtec2,
+                    idhab=habilidad_obj.idhab,
+                    idhab2=habilidad2_obj.idhab2
+                )
+                db.session.add(candidato)
+
+            # 📌 Crear la postulación con los datos actualizados
             nueva_postulacion = Postulacion(
                 idCandidato=candidato.id,
                 idOfer=idOfer,
-                aptitud=None,
-                puntaje=0,
                 experiencia=experiencia,
                 idedu=educacion_obj.idedu,
                 idtec=tecnologia_obj.idtec,
-                idhab=habilidad_obj.idhab,
                 idtec2=tecnologia2_obj.idtec2,
-                idhab2=habilidad2_obj.idhab2
+                idhab=habilidad_obj.idhab,
+                idhab2=habilidad2_obj.idhab2,
+                aptitud=None,
+                puntaje=0
             )
             db.session.add(nueva_postulacion)
             db.session.commit()
-            flash(f"✔️Postulación de {nombre} registrada exitosamente en la oferta laboral '{OfertaLaboral.query.get(idOfer).nombre}'.", category="form")
+
+            flash(f"✔️Postulación de {nombre} registrada en la oferta '{OfertaLaboral.query.get(idOfer).nombre}'.", category="form")
         except Exception as e:
             flash("❌Error al procesar la postulación.", category="form")
             return redirect("/cargarCV")
@@ -1383,6 +1365,7 @@ def cargarCV():
         opciones_tecnologias2=session["opciones_tecnologias2"],
         opciones_habilidades2=session["opciones_habilidades2"]
     )
+
 
 
 @app.route("/etiquetas", methods=["GET", "POST"])
