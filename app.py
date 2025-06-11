@@ -282,13 +282,13 @@ def abrir_navegador():
 
 
 def obtener_correos_aptos(idOfer):
-    postulaciones = Postulacion.query.filter_by(idOfer=idOfer, aptitud=True).all()  # 📌 Filtrar postulaciones aptas
-    return [(p.candidato.nombre, p.candidato.mail) for p in postulaciones if p.candidato]  # 📌 Acceder al candidato correctamente
+    postulaciones = Postulacion.query.filter_by(idOfer=idOfer, aptitud=True).all()  # 
+    return [(p.candidato.nombre, p.candidato.mail) for p in postulaciones if p.candidato]  # 
 
 
 def obtener_correos_noaptos(idOfer):
-    postulaciones = Postulacion.query.filter_by(idOfer=idOfer, aptitud=False).all()  # 📌 Filtrar postulaciones no aptas
-    return [(p.candidato.nombre, p.candidato.mail) for p in postulaciones if p.candidato]  # 📌 Acceder correctamente
+    postulaciones = Postulacion.query.filter_by(idOfer=idOfer, aptitud=False).all()  # 
+    return [(p.candidato.nombre, p.candidato.mail) for p in postulaciones if p.candidato]  # 
 
 
 
@@ -896,23 +896,23 @@ def predecir_postulantes_automatica(idOfer):
     predicciones = modelo.predict(X)
 
     for i, postulacion in enumerate(postulaciones):
-        postulacion.aptitud = bool(predicciones[i])  # 🔹 Ahora asignamos `aptitud` a `Postulacion`, no `Candidato`
+        postulacion.aptitud = bool(predicciones[i])  #  Ahora asignamos `aptitud` a `Postulacion`, no `Candidato`
         db.session.add(postulacion)
 
     db.session.commit()
 
 
 def asignar_puntajes_automatica(idOfer):
-    postulaciones = Postulacion.query.filter_by(idOfer=idOfer, aptitud=True).all()  # 🔹 Filtrar postulaciones aptas
+    postulaciones = Postulacion.query.filter_by(idOfer=idOfer, aptitud=True).all()  #  Filtrar postulaciones aptas
 
     if not postulaciones:
         return
 
     for p in postulaciones:
-        p.puntaje = calcular_puntaje(p.candidato)  # 🔹 Asignamos puntaje a la `Postulacion`, no a `Candidato`
-        db.session.add(p)  # 🔹 Agregamos la postulación actualizada
+        p.puntaje = calcular_puntaje(p.candidato)  #  Asignamos puntaje a la `Postulacion`, no a `Candidato`
+        db.session.add(p)  #  Agregamos la postulación actualizada
 
-    db.session.commit()  # 🔹 Guardamos cambios en la base de datos
+    db.session.commit()  #  Guardamos cambios en la base de datos
 
 
 
@@ -1496,7 +1496,7 @@ def obtener_metricas(oferta_id):
         promedios = {}
         for rel in query:
             etiqueta = nombre_func(rel)
-            postulaciones = Postulacion.query.filter_by(idOfer=oferta_id, **etiqueta["filtro"]).all()  # 📌 Ahora sobre `Postulacion`
+            postulaciones = Postulacion.query.filter_by(idOfer=oferta_id, **etiqueta["filtro"]).all()  #  Ahora sobre `Postulacion`
             etiquetas.append(etiqueta["nombre"])
             cantidades.append(len(postulaciones))
             promedios[etiqueta["nombre"]] = (
@@ -1535,7 +1535,7 @@ def obtener_metricas(oferta_id):
     # 📌 Provincias
     provincias_postulantes = {}
     for p in Postulacion.query.filter_by(idOfer=oferta_id).all():
-        prov = p.candidato.ubicacion  # 📌 Ahora accedemos desde `Postulacion.candidato`
+        prov = p.candidato.ubicacion  #  Ahora accedemos desde `Postulacion.candidato`
         provincias_postulantes[prov] = provincias_postulantes.get(prov, 0) + 1
 
     # 📌 Totales
