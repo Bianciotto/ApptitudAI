@@ -31,13 +31,13 @@ def client_Candidatos():
 # Envía una solicitud POST con datos válidos y espera una respuesta 200 o 302
 # Luego verifica que el postulante fue correctamente guardado en la base de datos
 @pytest.mark.parametrize(
-    "nombre, apellido, email, telefono, ubicacion, experiencia, educacion, tecnologias, habilidades",
+    "nombre, apellido, email, telefono, ubicacion, experiencia, educacion, tecnologia1,tecnologia2, habilidad1, habilidad2",
     [
-        ('Lucas', 'Abalos', 'correoDePueba123@gmail.com', '1135356456', 'Buenos Aires', '2', 'Secundario', 'Python', 'Trabajo en equipo'),
-        ('Jose', 'Perez', 'correoDePueba4123@gmail.com', '1343567856', 'Buenos Aires', '2', 'Secundario', 'Python', 'Trabajo en equipo'),
+        ('Lucas', 'Abalos', 'correoDePueba123@gmail.com', '1135356456', 'Buenos Aires', '2', 'secundario', 'python','html' ,'trabajo en equipo','adaptabilidad'),
+        ('Jose', 'Perez', 'correoDePueba4123@gmail.com', '1343567856', 'Buenos Aires', '2', 'secundario', 'python','html' ,'trabajo en equipo','adaptabilidad'),
     ]
 )
-def test_valid_agregar_postulacion(client_Candidatos: FlaskClient, nombre: Literal['Lucas'] | Literal['Jose'], apellido: Literal['Abalos'] | Literal['Perez'], email: Literal['correoDePueba123@gmail.com'] | Literal['correoDePueba4123@gmail.com'], telefono: Literal['1135356456'] | Literal['1343567856'], ubicacion: Literal['Buenos Aires'], experiencia: Literal['2'], educacion: Literal['Secundario'], tecnologias: Literal['Python'], habilidades: Literal['Trabajo en equipo']):
+def test_valid_agregar_postulacion(client_Candidatos: FlaskClient,nombre,apellido,email,telefono,ubicacion,experiencia,educacion,tecnologia1,tecnologia2,habilidad1,habilidad2):    
     client_Candidatos.get('/postulacionIT')
     
     oferta_id = OfertaLaboral.query.filter_by(estado = 'Activa').first().idOfer
@@ -45,13 +45,15 @@ def test_valid_agregar_postulacion(client_Candidatos: FlaskClient, nombre: Liter
     response = client_Candidatos.post('/postulacion', data={
         'nombre': nombre,
         'apellido': apellido,
-        'email': email, 
+        'email': email,
         'telefono': telefono,
-        'ubicacion': ubicacion, 
-        'experiencia': experiencia, 
-        'educacion': educacion,  
-        'tecnologias': tecnologias,        
-        'habilidades': habilidades,
+        'ubicacion': ubicacion,
+        'experiencia': experiencia,
+        'educacion': educacion,
+        'tecnologias': tecnologia1,      
+        'tecnologias2': tecnologia2,     
+        'habilidades': habilidad1,       
+        'habilidades2': habilidad2,      
         'idOfer': str(oferta_id),
         'puntaje': 0
     })
@@ -70,13 +72,13 @@ def test_valid_agregar_postulacion(client_Candidatos: FlaskClient, nombre: Liter
 # La segunda debería fallar con un código de error (500) por ser duplicado
 # Luego verifica que el postulante no fue duplicado en la base de datos
 @pytest.mark.parametrize(
-     "nombre, apellido, email, telefono, ubicacion, experiencia, educacion, tecnologias, habilidades",
+    "nombre, apellido, email, telefono, ubicacion, experiencia, educacion, tecnologia1,tecnologia2, habilidad1, habilidad2",
      [
-         ('Martin', 'Gonzales', 'tincho462@gmail.com','1125432354', 'Buenos Aires', '6','Universitario', 'Java', 'Trabajo en equipo'),
-         ('Agustin', 'Martinez', 'agusmartinez@hotmail.com','1123432345', 'Formosa', '3' ,'Postgrado', 'SQL', 'Liderazgo')
+         ('Martin', 'Gonzales', 'tincho462@gmail.com','1125432354', 'Buenos Aires', '6','universitario', 'java','css', 'trabajo en equipo','autodidacta'),
+         ('Agustin', 'Martinez', 'agusmartinez@hotmail.com','1123432345', 'Formosa', '3' ,'postgrado', 'sql','css', 'liderazgo','autodidacta')
      ]
 )
-def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre: Literal['Martin'] | Literal['Agustin'], apellido: Literal['Gonzales'] | Literal['Martinez'], email: Literal['tincho462@gmail.com'] | Literal['agusmartinez@hotmail.com'], telefono: Literal['1125432354'] | Literal['1123432345'], ubicacion: Literal['Buenos Aires'] | Literal['Formosa'], experiencia: Literal['6'] | Literal['3'], educacion: Literal['Universitario'] | Literal['Postgrado'], tecnologias: Literal['Java'] | Literal['SQL'], habilidades: Literal['Trabajo en equipo'] | Literal['Liderazgo']):
+def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre,apellido,email,telefono,ubicacion,experiencia,educacion,tecnologia1,tecnologia2,habilidad1,habilidad2):
     client_Candidatos.get('/postulacionIT')
 
     oferta_id = OfertaLaboral.query.filter_by(estado = 'Activa').first().idOfer
@@ -84,13 +86,15 @@ def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre: Literal['
     data = {
         'nombre': nombre,
         'apellido': apellido,
-        'email': email, 
+        'email': email,
         'telefono': telefono,
-        'ubicacion': ubicacion, 
-        'experiencia': experiencia, 
-        'educacion': educacion,  
-        'tecnologias': tecnologias,        
-        'habilidades': habilidades,
+        'ubicacion': ubicacion,
+        'experiencia': experiencia,
+        'educacion': educacion,
+        'tecnologias': tecnologia1,      
+        'tecnologias2': tecnologia2,     
+        'habilidades': habilidad1,       
+        'habilidades2': habilidad2,      
         'idOfer': str(oferta_id),
         'puntaje': 0
     }

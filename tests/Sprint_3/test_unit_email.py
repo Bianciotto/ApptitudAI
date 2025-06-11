@@ -41,7 +41,9 @@ def setup_db(app):
             experiencia=10,
             idedu=0,
             idtec=0,
+            idtec2=0,
             idhab=0,
+            idhab2=0,
             idOfer = oferta.idOfer,
             aptitud=True,
             puntaje=0
@@ -57,7 +59,9 @@ def setup_db(app):
             experiencia=2,
             idedu=1,
             idtec=1,
+            idtec2=1,
             idhab=1,
+            idhab2=1,
             idOfer = oferta.idOfer,
             aptitud=False,
             puntaje=0
@@ -73,7 +77,9 @@ def setup_db(app):
             experiencia=1,
             idedu=2,
             idtec=1,
+            idtec2=0,
             idhab=0,
+            idhab2=1,
             idOfer = oferta.idOfer,
             aptitud=False,
             puntaje=0
@@ -93,7 +99,7 @@ def test_obtener_correos_aptos(app, setup_db):
         candidatosAptos = obtener_correos_aptos(setup_db)
 
         assert len(candidatosAptos) == 1
-        assert candidatosAptos[0] == "JosePerez@gmail.com"
+        assert candidatosAptos[0][1] == "JosePerez@gmail.com"
 
 #Test que prueba la obtencion de todos los correos de los candidatos no aptos
 def test_obtener_correos_no_aptos(app, setup_db):
@@ -101,8 +107,8 @@ def test_obtener_correos_no_aptos(app, setup_db):
         candidatoNoAptos = obtener_correos_noaptos(setup_db)
 
         assert len(candidatoNoAptos) == 2
-        assert candidatoNoAptos[0] == "PedroPascal@gmail.com"
-        assert candidatoNoAptos[1] == "MartinGonzalez@gmail.com"
+        assert candidatoNoAptos[0][1] == "PedroPascal@gmail.com"
+        assert candidatoNoAptos[1][1] == "MartinGonzalez@gmail.com"
 
 #Test que prueba que se enviaron los mails a todos los candidatos aptos
 def test_envio_email_apto(app, setup_db):

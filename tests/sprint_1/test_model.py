@@ -2,7 +2,7 @@ import pytest
 import joblib
 import pandas as pd
 from datetime import datetime
-from app import app as appLocal, db, OfertaLaboral, Candidato, Educacion, Tecnologia, Habilidad
+from app import app as appLocal, db, OfertaLaboral, Candidato, Educacion, Tecnologia, Tecnologia2,Habilidad, Habilidad2,OfertaEducacion,OfertaHabilidad,OfertaHabilidad2,OfertaTecnologia,OfertaTecnologia2
 
 @pytest.fixture
 def client():
@@ -22,14 +22,11 @@ def loadModel():
 
 #Test que verifica que un candidato es apto
 def test_model_prediction_apto():
-    # Se carga el modelo
     modelo = loadModel()
 
-    # Se crean los datos de prueba
-    columnas = ["Experiencia", "Educacion", "Tecnologías", "Habilidades"] 
-    datos_prueba = pd.DataFrame([[10, 2, 3, 1]], columns=columnas)
+    columnas = ["Educacion", "Tecnologías", "Tecnologías2", "Habilidades", "Habilidades2"]
+    datos_prueba = pd.DataFrame([[0, 0, 0, 0, 0]], columns=columnas)
 
-    # Se realiza la predicción
     try:
         prediccion = modelo.predict(datos_prueba)
     except Exception as e:
@@ -39,14 +36,11 @@ def test_model_prediction_apto():
 
 #Test que verifica que un candidato es no apto
 def test_model_prediction_no_apto():
-    # Se carga el modelo
     modelo = loadModel()
 
-    # Se crean los datos de prueba
-    columnas = ["Experiencia", "Educacion", "Tecnologías", "Habilidades"]  # Asegúrate de que coincidan con las esperadas
-    datos_prueba = pd.DataFrame([[1, 0, 0, 0]], columns=columnas)
+    columnas = ["Educacion", "Tecnologías", "Tecnologías2", "Habilidades", "Habilidades2"]
+    datos_prueba = pd.DataFrame([[2, 3, 1, 1, 2]], columns=columnas)
 
-    # Se realiza la predicción
     try:
         prediccion = modelo.predict(datos_prueba)
     except Exception as e:
@@ -54,6 +48,7 @@ def test_model_prediction_no_apto():
 
     assert prediccion[0] == 0
 
+#Test que verifica que se aplique el modelo al cerrar una oferta
 def test_model_aplicado_al_cerrar_oferta(client):
     with client.session_transaction() as sess:
         sess["username"] = "Fernando"
@@ -72,9 +67,20 @@ def test_model_aplicado_al_cerrar_oferta(client):
         db.session.add(oferta)
         db.session.flush()
 
-        edu = Educacion.query.filter_by(nombre="Postgrado").first()
-        tec = Tecnologia.query.filter_by(nombre="Java").first()
-        hab = Habilidad.query.filter_by(nombre="Liderazgo").first()
+        edu = Educacion.query.filter_by(nombre="postgrado").first()
+        tec1 = Tecnologia.query.filter_by(nombre="aws").first()
+        tec2 = Tecnologia2.query.filter_by(nombre ="azure").first()
+        hab1 = Habilidad.query.filter_by(nombre="adaptabilidad").first()
+        hab2 = Habilidad2.query.filter_by(nombre="autodidacta").first()
+
+        oferta_edu = OfertaEducacion(idOfer=oferta.idOfer, idEdu=edu.idedu, importancia=3)
+        oferta_tec = OfertaTecnologia(idOfer=oferta.idOfer, idTec=tec1.idtec, importancia=3)
+        oferta_tec2 = OfertaTecnologia2(idOfer=oferta.idOfer, idTec2=tec2.idtec2, importancia=3)
+        oferta_hab = OfertaHabilidad(idOfer=oferta.idOfer, idHab=hab1.idhab, importancia=3)
+        oferta_hab2 = OfertaHabilidad2(idOfer=oferta.idOfer, idHab2=hab2.idhab2, importancia=3)
+
+        db.session.add_all([oferta_edu, oferta_tec, oferta_tec2, oferta_hab, oferta_hab2])
+        db.session.commit()
 
         c_apto = Candidato(
             id=f"apto_test@gmail.com{oferta.idOfer}",
@@ -85,8 +91,10 @@ def test_model_aplicado_al_cerrar_oferta(client):
             ubicacion="Buenos Aires",
             experiencia=10,
             idedu=edu.idedu,
-            idtec=tec.idtec,
-            idhab=hab.idhab,
+            idtec=tec1.idtec,
+            idtec2=tec2.idtec2,
+            idhab=hab1.idhab,
+            idhab2=hab2.idhab2,
             idOfer=oferta.idOfer
         )
 
@@ -97,17 +105,18 @@ def test_model_aplicado_al_cerrar_oferta(client):
             mail="noapto_test@gmail.com",
             telefono="1122222222",
             ubicacion="Cordoba",
-            experiencia=0,
-            idedu=0,
-            idtec=0,
-            idhab=0,
+            experiencia=2,
+            idedu=2,
+            idtec=3,
+            idtec2=1,
+            idhab=1,
+            idhab2=2,
             idOfer=oferta.idOfer
         )
 
         db.session.add_all([c_apto, c_noapto])
         db.session.commit()
-        oferta_id = oferta.idOfer  # Guardar el ID para usarlo fuera del contexto
-
+        oferta_id = oferta.idOfer 
 
     response = client.post(f"/cerrar_oferta/{oferta_id}")
     assert response.status_code == 302
