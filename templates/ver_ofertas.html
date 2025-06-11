@@ -139,12 +139,15 @@
     {% else %}
         <p>{{ mensaje }}</p>
     {% endif %}
-    <div style="text-align: center; margin: 15px;">
-        <form method="POST" action="{{ url_for('limpiar_ofertas_expiradas') }}">
-            <button type="submit" style="padding: 8px 16px;">
-                <i class="fas fa-trash-alt"></i> Limpiar ofertas cerradas (+24hs)
-            </button>
-        </form>
+    <div style="text-align: center; margin: 0;">
+      <form method="POST" action="{{ url_for('limpiar_ofertas_expiradas') }}" 
+            style="display: inline-block;margin-left: 20px ;padding: 0px 60px; background-color: #4b0082; border-radius: 8px; box-shadow: 0 0 10px rgba(75, 0, 130, 0.5);">
+        
+        <button type="submit" style="margin: 0 !important; font-size: 13px; color: #fff; background: none; border: none; cursor: pointer;">
+          <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
+          Limpiar ofertas cerradas (+24hs)
+        </button>
+      </form>
     </div>
 </body>
 
