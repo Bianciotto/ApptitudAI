@@ -206,7 +206,7 @@ def get_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-
+'''
 # Crear la base de datos y agregar usuarios ficticios si no existen
 with app.app_context():
     db.create_all()
@@ -257,7 +257,7 @@ with app.app_context():
     db.session.commit()
     print("Usuarios ficticios creados con éxito.")
 
-
+'''
 
 # Cargar el modelo correctamente
 modelo_path = get_path("modelo_candidatos.pkl")
