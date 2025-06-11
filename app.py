@@ -308,6 +308,12 @@ def index():
     return redirect('/login')
 
 
+@app.route('/sobre-nosotros')
+def sobre_nosotros():
+    return render_template('sobre_nosotros.html')
+
+
+
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
