@@ -585,6 +585,27 @@ def crear_oferta():
             for idx, clase in enumerate(encoder_habilidades2.classes_):
                 nueva_relacion = OfertaHabilidad2(idOfer=nueva_oferta.idOfer, idHab2=idx, importancia=0)
                 db.session.add(nueva_relacion)
+                
+            if nueva_oferta.modalidad in ["Local", "Mixta"]:
+                candidatos = Candidato.query.all()
+
+                for candidato in candidatos:
+                    nueva_postulacion = Postulacion(
+                        idCandidato=candidato.id,
+                        idOfer=nueva_oferta.idOfer,
+                        experiencia=candidato.experiencia,
+                        idedu=candidato.idedu,
+                        idtec=candidato.idtec,
+                        idtec2=candidato.idtec2,
+                        idhab=candidato.idhab,
+                        idhab2=candidato.idhab2,
+                        aptitud=None,
+                        puntaje=0
+                    )
+                    db.session.add(nueva_postulacion)
+
+                nueva_oferta.cant_candidatos += len(candidatos)
+
 
             db.session.commit()  
             flash(f"Oferta '{nombre}' creada con éxito 🎉 con estado '{nueva_oferta.estado}', modalidad '{nueva_oferta.modalidad}' y etiquetas asignadas", "success")
