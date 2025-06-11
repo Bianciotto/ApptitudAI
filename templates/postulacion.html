@@ -28,7 +28,7 @@
         <select name="idOfer" required>
             <option value="">-- Selecciona una oferta --</option>
             {% for oferta in opciones_ofertas if oferta.estado != "Cerrada" %}
-                <option value="{{ oferta.idOfer }}">{{ oferta.nombre }}</option>
+                <option value="{{ idOfer }}">{{ oferta.nombre }}</option>
             {% endfor %}
         </select>
         

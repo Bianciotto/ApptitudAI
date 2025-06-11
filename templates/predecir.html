@@ -63,7 +63,11 @@
       </summary>
       <div class="submenu">
         <a href="{{ url_for('estadisticas') }}"><i class="fas fa-sliders-h"></i>  Estadisticas</a>
-        <a href="{{ url_for('metricas') }}"><i class="fas fa-list"></i> Ver métricas</a>
+        {% if ofertas_activas %}
+          <a href="{{ url_for('metricas', oferta_id=ofertas_activas[0].idOfer) }}"><i class="fas fa-list"></i> Ver métricas</a>
+        {% else %}
+          <p>No hay ofertas activas disponibles.</p>
+        {% endif %}
       </div>
     </details>
   </nav>

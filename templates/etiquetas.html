@@ -64,7 +64,7 @@
       </summary>
       <div class="submenu">
         <a href="{{ url_for('estadisticas') }}"><i class="fas fa-sliders-h"></i>  Estadisticas</a>
-        <a href="{{ url_for('metricas') }}"><i class="fas fa-list"></i> Ver métricas</a>
+        <a href="{{ url_for('metricas', oferta_id=idOfer) }}"><i class="fas fa-list"></i> Ver métricas</a>
       </div>
 
       
@@ -135,7 +135,7 @@
         <label for="idOfer">Selecciona una oferta laboral:</label>
         <select name="idOfer" onchange="this.form.submit()">
             {% for ofer in ofertas %}
-                <option value="{{ ofer.idOfer }}" {% if ofer.idOfer|string == idOfer|string %}selected{% endif %}>
+                <option value="{{ ofer.idOfer }}" {% if ofer.idOfer == idOfer %}selected{% endif %}>
                     {{ ofer.nombre }}
                 </option>
             {% endfor %}

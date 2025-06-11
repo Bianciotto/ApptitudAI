@@ -45,44 +45,54 @@ email = Mail(app)
 # Base de datos
     
 class Candidato(db.Model):
+    __tablename__ = "candidato"
     id = db.Column(db.String, primary_key=True)  # Usamos el correo como ID único
     nombre = db.Column(db.String(100), nullable=False)
     apellido = db.Column(db.String(100), nullable=False)
     mail = db.Column(db.String(100), nullable=False, unique=True)
     telefono = db.Column(db.String(50), nullable=False)
     ubicacion = db.Column(db.String(100), nullable=False)
+
+    postulaciones = db.relationship("Postulacion", back_populates="candidato", cascade="all, delete-orphan")
+
+class Postulacion(db.Model):
+    __tablename__ = "postulacion"
+
+    idPostulacion = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    idCandidato = db.Column(db.String, db.ForeignKey("candidato.id"))
+    idOfer = db.Column(db.Integer, db.ForeignKey("oferta_laboral.idOfer"))
+    
     experiencia = db.Column(db.Integer, nullable=False)
-    idedu = db.Column(db.Integer, db.ForeignKey('educacion.idedu'))
-    idtec = db.Column(db.Integer, db.ForeignKey('tecnologia.idtec'))
-    idtec2 = db.Column(db.Integer, db.ForeignKey('tecnologia2.idtec2'))
-    idhab = db.Column(db.Integer, db.ForeignKey('habilidad.idhab'))
-    idhab2 = db.Column(db.Integer, db.ForeignKey('habilidad2.idhab2'))
-    idOfer = db.Column(db.Integer, db.ForeignKey('oferta_laboral.idOfer'))
+    idedu = db.Column(db.Integer, db.ForeignKey("educacion.idedu"))
+    idtec = db.Column(db.Integer, db.ForeignKey("tecnologia.idtec"))
+    idtec2 = db.Column(db.Integer, db.ForeignKey("tecnologia2.idtec2"))
+    idhab = db.Column(db.Integer, db.ForeignKey("habilidad.idhab"))
+    idhab2 = db.Column(db.Integer, db.ForeignKey("habilidad2.idhab2"))
     aptitud = db.Column(db.Boolean, nullable=True)
     puntaje = db.Column(db.Integer, nullable=False, default=0)
 
-    oferta = db.relationship('OfertaLaboral', back_populates='candidatos') 
+    candidato = db.relationship("Candidato", back_populates="postulaciones")
+    oferta = db.relationship("OfertaLaboral", back_populates="postulaciones")
 
-    
 class OfertaLaboral(db.Model):
-    __tablename__ = 'oferta_laboral'
-    
+    __tablename__ = "oferta_laboral"
+
     idOfer = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nombre = db.Column(db.String(200), nullable=False, unique=True)
     fecha_cierre = db.Column(db.DateTime, nullable=False)
     max_candidatos = db.Column(db.Integer, nullable=False)
-    remuneracion = db.Column(db.String(50), nullable=False)  
-    beneficio = db.Column(db.String(200), nullable=True)  
-    estado = db.Column(db.String(50), nullable=False, default="Activa")  
-    usuario_responsable = db.Column(db.String(100), nullable=False)  
+    remuneracion = db.Column(db.String(50), nullable=False)
+    beneficio = db.Column(db.String(200), nullable=True)
+    estado = db.Column(db.String(50), nullable=False, default="Activa")
+    usuario_responsable = db.Column(db.String(100), nullable=False)
 
-    # Relaciones
-    candidatos = db.relationship('Candidato', back_populates='oferta', lazy=True)
-    educaciones = db.relationship('OfertaEducacion', back_populates='oferta', lazy=True)
-    tecnologias = db.relationship('OfertaTecnologia', back_populates='oferta', lazy=True)
-    tecnologias2 = db.relationship('OfertaTecnologia2', back_populates='oferta', lazy=True)
-    habilidades = db.relationship('OfertaHabilidad', back_populates='oferta', lazy=True)
-    habilidades2 = db.relationship('OfertaHabilidad2', back_populates='oferta', lazy=True)
+    postulaciones = db.relationship("Postulacion", back_populates="oferta", cascade="all, delete-orphan", lazy=True)
+    educaciones = db.relationship("OfertaEducacion", back_populates="oferta", lazy=True)
+    tecnologias = db.relationship("OfertaTecnologia", back_populates="oferta", lazy=True)
+    tecnologias2 = db.relationship("OfertaTecnologia2", back_populates="oferta", lazy=True)
+    habilidades = db.relationship("OfertaHabilidad", back_populates="oferta", lazy=True)
+    habilidades2 = db.relationship("OfertaHabilidad2", back_populates="oferta", lazy=True)
+
 
 
 # Tablas intermedias para asociar cada oferta con sus etiquetas
@@ -188,74 +198,105 @@ def get_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-
 '''
 # Crear la base de datos y agregar usuarios ficticios si no existen
-#if not os.path.exists("erp_rrhh.db"):
 with app.app_context():
     db.create_all()
-    # Agregar usuarios ficticios
-    # Cargar los encoders
+
+    # 📌 Cargar los encoders
     encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
     encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
     encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
     encoder_tecnologias2 = joblib.load(get_path("encoder_tecnologias2.pkl"))
     encoder_habilidades2 = joblib.load(get_path("encoder_habilidades2.pkl"))
 
-    # Insertar las clases en la tabla intermedia de 'OfertaEducacion'
+    # 📌 Insertar educación en la tabla 'Educacion'
     for idx, clase in enumerate(encoder_educacion.classes_):
-        nueva_educacion = Educacion(
-            idedu=idx,  # El índice asignado por el encoder será el ID
-            nombre=clase
-        )
-        db.session.merge(nueva_educacion)  # Merge para evitar duplicados
+        nueva_educacion = Educacion(idedu=idx, nombre=clase)
+        db.session.merge(nueva_educacion)  
 
-    # Insertar las clases en la tabla intermedia de 'OfertaTecnologia'
+    # 📌 Insertar tecnologías en 'Tecnologia'
     for idx, clase in enumerate(encoder_tecnologias.classes_):
-        nueva_tecnologia = Tecnologia(
-            idtec=idx,
-            nombre=clase
-        )
+        nueva_tecnologia = Tecnologia(idtec=idx, nombre=clase)
         db.session.merge(nueva_tecnologia)
-        
-    # Insertar las clases en la tabla intermedia de 'OfertaTecnologia2'
+
+    # 📌 Insertar tecnologías secundarias en 'Tecnologia2'
     for idx, clase in enumerate(encoder_tecnologias2.classes_):
-        nueva_tecnologia2 = Tecnologia2(
-            idtec2=idx,
-            nombre=clase
-        )
+        nueva_tecnologia2 = Tecnologia2(idtec2=idx, nombre=clase)
         db.session.merge(nueva_tecnologia2)
 
-    # Insertar las clases en la tabla intermedia de 'OfertaHabilidad'
+    # 📌 Insertar habilidades en 'Habilidad'
     for idx, clase in enumerate(encoder_habilidades.classes_):
-        nueva_habilidad = Habilidad(
-            idhab=idx,
-            nombre=clase
-        )
+        nueva_habilidad = Habilidad(idhab=idx, nombre=clase)
         db.session.merge(nueva_habilidad)
-        
-    # Insertar las clases en la tabla intermedia de 'OfertaHabilidad2'
+
+    # 📌 Insertar habilidades secundarias en 'Habilidad2'
     for idx, clase in enumerate(encoder_habilidades2.classes_):
-        nueva_habilidad2 = Habilidad2(
-            idhab2=idx,
-            nombre=clase
-        )
+        nueva_habilidad2 = Habilidad2(idhab2=idx, nombre=clase)
         db.session.merge(nueva_habilidad2)
 
-
-    # Confirmar los cambios
     db.session.commit()
     print("Clases cargadas automáticamente en la base de datos.")
+
+    # 📌 Crear usuarios ficticios correctamente adaptados
     usuario_admin = Usuario(username="Fernando", password=generate_password_hash("admin123", method="pbkdf2:sha256"), type="Admin_RRHH")
     usuario_supervisor = Usuario(username="Diego", password=generate_password_hash("supervisor123", method="pbkdf2:sha256"), type="Supervisor")
     usuario_analista = Usuario(username="Guada", password=generate_password_hash("analista123", method="pbkdf2:sha256"), type="Analista_Datos")
-    
+
     db.session.add(usuario_admin)
     db.session.add(usuario_supervisor)
     db.session.add(usuario_analista)
     db.session.commit()
     print("Usuarios ficticios creados con éxito.")
-    
+
+    # 📌 Crear candidatos ficticios SIN referencia a `idOfer`
+    candidatos_ficticios = [
+        {"mail": "candidato1@gmail.com", "nombre": "Carlos", "apellido": "Pérez", "telefono": "12345678", "ubicacion": "Buenos Aires"},
+        {"mail": "candidato2@gmail.com", "nombre": "Ana", "apellido": "Gómez", "telefono": "87654321", "ubicacion": "Córdoba"},
+        {"mail": "candidato3@gmail.com", "nombre": "Juan", "apellido": "Fernández", "telefono": "45678912", "ubicacion": "Mendoza"},
+    ]
+
+    for c in candidatos_ficticios:
+        nuevo_candidato = Candidato(
+            id=c["mail"],
+            nombre=c["nombre"],
+            apellido=c["apellido"],
+            mail=c["mail"],
+            telefono=c["telefono"],
+            ubicacion=c["ubicacion"]
+        )
+        db.session.merge(nuevo_candidato)
+
+    db.session.commit()
+    print("Candidatos ficticios creados con éxito.")
+
+    # 📌 Crear postulaciones ficticias
+    ofertas_disponibles = OfertaLaboral.query.all()  # Obtener ofertas activas
+
+    if ofertas_disponibles:
+        postulaciones_ficticias = [
+            {"candidato_id": "candidato1@gmail.com", "idOfer": ofertas_disponibles[0].idOfer, "experiencia": 5, "idedu": 1, "idtec": 2, "idhab": 3, "idtec2": 1, "idhab2": 2, "aptitud": None, "puntaje": 0},
+            {"candidato_id": "candidato2@gmail.com", "idOfer": ofertas_disponibles[1].idOfer, "experiencia": 3, "idedu": 2, "idtec": 1, "idhab": 2, "idtec2": 2, "idhab2": 3, "aptitud": None, "puntaje": 0},
+            {"candidato_id": "candidato3@gmail.com", "idOfer": ofertas_disponibles[2].idOfer, "experiencia": 7, "idedu": 3, "idtec": 3, "idhab": 1, "idtec2": 3, "idhab2": 1, "aptitud": None, "puntaje": 0},
+        ]
+
+        for p in postulaciones_ficticias:
+            nueva_postulacion = Postulacion(
+                idCandidato=p["candidato_id"],
+                idOfer=p["idOfer"],
+                experiencia=p["experiencia"],
+                idedu=p["idedu"],
+                idtec=p["idtec"],
+                idhab=p["idhab"],
+                idtec2=p["idtec2"],
+                idhab2=p["idhab2"],
+                aptitud=p["aptitud"],
+                puntaje=p["puntaje"]
+            )
+            db.session.merge(nueva_postulacion)
+
+        db.session.commit()
+        print("Postulaciones ficticias creadas con éxito.")
 '''
 
 # Cargar el modelo correctamente
@@ -703,141 +744,144 @@ def estadisticas():
 @app.route("/predecir", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])
 def predecir():
-    plt.close('all')
-    if request.method == "POST":
+    plt.close("all")
 
-        # Verifica que el archivo esté en la solicitud
+    # 📌 Cargar ofertas activas y pasarlas a la plantilla
+    ofertas_activas = OfertaLaboral.query.filter_by(estado="Activa").all()
+
+    if request.method == "POST":
+        # 📌 Verifica que el archivo CSV esté en la solicitud
         if "archivo_csv" not in request.files:
             return "Por favor, sube un archivo CSV."
 
         file = request.files["archivo_csv"]
         if file.filename == "":
             return "No seleccionaste ningún archivo."
-        
-        try:
-            # Leer el archivo CSV
-            dataSet = pd.read_csv(file)
-            encoder_educacion_path = get_path("encoder_educacion.pkl")
-            encoder_habilidades_path = get_path("encoder_habilidades.pkl")
-            encoder_tecnologias_path = get_path("encoder_tecnologias.pkl")
-            encoder_habilidades2_path = get_path("encoder_habilidades2.pkl")
-            encoder_tecnologias2_path = get_path("encoder_tecnologias2.pkl")
-        
-            encoder_educacion = joblib.load(encoder_educacion_path)
-            session["opciones_educacion"] = list(encoder_educacion.classes_)
-            encoder_habilidades = joblib.load(encoder_habilidades_path)
-            session["opciones_habilidades"] = list(encoder_habilidades.classes_)
-            encoder_tecnologias = joblib.load(encoder_tecnologias_path)
-            session["opciones_tecnologias"] = list(encoder_tecnologias.classes_)
-            encoder_habilidades2 = joblib.load(encoder_habilidades2_path)
-            session["opciones_habilidades2"] = list(encoder_habilidades2.classes_)
-            encoder_tecnologias2 = joblib.load(encoder_tecnologias2_path)
-            session["opciones_tecnologias2"] = list(encoder_tecnologias2.classes_)
-            modelo = joblib.load(modelo_path)
 
-            # Verifica que las columnas necesarias existan en el archivo
+        try:
+            # 📌 Leer el archivo CSV y cargar el modelo
+            dataSet = pd.read_csv(file)
+            modelo = joblib.load(get_path("modelo_postulaciones.pkl"))
+
+            # 📌 Cargar los encoders
+            encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
+            encoder_habilidades = joblib.load(get_path("encoder_habilidades.pkl"))
+            encoder_tecnologias = joblib.load(get_path("encoder_tecnologias.pkl"))
+            encoder_habilidades2 = joblib.load(get_path("encoder_habilidades2.pkl"))
+            encoder_tecnologias2 = joblib.load(get_path("encoder_tecnologias2.pkl"))
+
+            session["opciones_educacion"] = list(encoder_educacion.classes_)
+            session["opciones_habilidades"] = list(encoder_habilidades.classes_)
+            session["opciones_tecnologias"] = list(encoder_tecnologias.classes_)
+            session["opciones_habilidades2"] = list(encoder_habilidades2.classes_)
+            session["opciones_tecnologias2"] = list(encoder_tecnologias2.classes_)
+
+            # 📌 Verificar que el archivo contiene las columnas requeridas
             columnas_requeridas = ["Experiencia", "Educacion", "Tecnologías", "Habilidades", "Tecnologías2", "Habilidades2"]
             for columna in columnas_requeridas:
                 if columna not in dataSet.columns:
                     return f"El archivo no contiene la columna requerida: {columna}"
 
-            dataSet2 = dataSet.copy()
-
-            # Transformar las columnas categóricas utilizando los encoders cargados
+            # 📌 Transformar las columnas categóricas utilizando los encoders cargados
             try:
-                dataSet["Educacion"] = encoder_educacion.fit_transform(dataSet["Educacion"])
-                dataSet["Habilidades"] = encoder_habilidades.fit_transform(dataSet["Habilidades"])
-                dataSet["Habilidades2"] = encoder_habilidades2.fit_transform(dataSet["Habilidades2"])
-                dataSet["Tecnologías"] = encoder_tecnologias.fit_transform(dataSet["Tecnologías"])
-                dataSet["Tecnologías2"] = encoder_tecnologias2.fit_transform(dataSet["Tecnologías2"])
-                
+                dataSet["Educacion"] = encoder_educacion.transform(dataSet["Educacion"])
+                dataSet["Habilidades"] = encoder_habilidades.transform(dataSet["Habilidades"])
+                dataSet["Habilidades2"] = encoder_habilidades2.transform(dataSet["Habilidades2"])
+                dataSet["Tecnologías"] = encoder_tecnologias.transform(dataSet["Tecnologías"])
+                dataSet["Tecnologías2"] = encoder_tecnologias2.transform(dataSet["Tecnologías2"])
             except ValueError as e:
                 return f"Error en las transformaciones: {e}. Asegúrate de que todas las categorías estén reconocidas por los encoders."
 
-            # Verificar si hay valores no válidos después de las transformaciones
+            # 📌 Verificar si hay valores no válidos después de las transformaciones
             if dataSet[["Educacion", "Tecnologías", "Tecnologías2", "Habilidades", "Habilidades2"]].isnull().values.any():
                 return "El archivo contiene categorías que no se pudieron transformar correctamente."
 
-            # Realizar las predicciones con el modelo
+            # 📌 Realizar las predicciones con el modelo
             X = dataSet[["Educacion", "Tecnologías", "Tecnologías2", "Habilidades", "Habilidades2"]]
             predicciones = modelo.predict(X)
 
-            # Añadir predicciones al DataFrame
-            dataSet2["Apto"] = ["Apto" if pred == 1 else "No Apto" for pred in predicciones]
+            # 📌 Actualizar las postulaciones con la predicción
+            for i, pred in enumerate(predicciones):
+                email = dataSet.iloc[i]["Email"]
+                idOfer = dataSet.iloc[i]["Oferta Laboral"]  
 
-            # Reordenar las columnas para asegurar que "Apto" esté al final
-            columnasOrdenadas = [col for col in dataSet2.columns if col != "Apto"] + ["Apto"]
-            dataSet2 = dataSet2[columnasOrdenadas]
+                postulacion = Postulacion.query.filter_by(idCandidato=email, idOfer=idOfer).first()
+                if postulacion:
+                    postulacion.aptitud = bool(pred)
+                    db.session.add(postulacion)
 
-            # Convertir DataFrame a HTML
-            tabla_html = dataSet2.to_html(classes="table table-striped", index=False)
+            db.session.commit()
 
-            # Renderizar resultado con HTML
-            return render_template("resultado.html", tabla=tabla_html)
+            # 📌 Reordenar las columnas para mostrar en HTML
+            dataSet["Apto"] = ["Apto" if pred == 1 else "No Apto" for pred in predicciones]
+            columnasOrdenadas = [col for col in dataSet.columns if col != "Apto"] + ["Apto"]
+            dataSet = dataSet[columnasOrdenadas]
+
+            # 📌 Convertir DataFrame a HTML y mostrar resultados
+            tabla_html = dataSet.to_html(classes="table table-striped", index=False)
+            return render_template("resultado.html", tabla=tabla_html, ofertas_activas=ofertas_activas)
 
         except Exception as e:
             return f"Ocurrió un error al procesar el archivo: {e}"
-    
-    return render_template("predecir.html")
+
+    return render_template("predecir.html", ofertas_activas=ofertas_activas)
+
+
 
 
 @app.route("/postulantes")
 @login_required(roles=["Admin_RRHH"])
 def postulantes():
-    idOfer = request.args.get("idOfer")  # Capturar la oferta seleccionada
+    idOfer = request.args.get("idOfer")
     filtro = request.args.get("filtro")
-    
-            
+
     ofertas = OfertaLaboral.query.all()
     if not idOfer:
         idOfer = request.form.get("idOfer") if request.method == "POST" else request.args.get("idOfer")
         if not idOfer and ofertas:
-            idOfer = ofertas[0].idOfer  # Primera oferta como default
+            idOfer = ofertas[0].idOfer  
 
     # 🔹 Detectar ofertas cerradas automáticamente
-    ofertas_cerradas = OfertaLaboral.query.filter(OfertaLaboral.fecha_cierre <= datetime.now(), OfertaLaboral.estado == "Activa").all()
-    
+    ofertas_cerradas = OfertaLaboral.query.filter(
+        OfertaLaboral.fecha_cierre <= datetime.now(), OfertaLaboral.estado == "Activa"
+    ).all()
+
     for oferta in ofertas_cerradas:
         oferta.estado = "Cerrada"
         db.session.add(oferta)
 
-        # 🔹 Ejecutar predicción y asignación de puntajes
         predecir_postulantes_automatica(oferta.idOfer)
         asignar_puntajes_automatica(oferta.idOfer)
-
-        # 🔹 Enviar correos automáticamente
         enviar_correos_automatica(oferta.idOfer)
 
-    db.session.commit()  # Guardar cambios en la base de datos
+    db.session.commit()  
 
-    # 🔹 Cargar candidatos como ya lo hacías
-    if idOfer:
-        candidatos = Candidato.query.filter_by(idOfer=idOfer).order_by(Candidato.puntaje.desc()).all()
-    else:
-        candidatos = Candidato.query.order_by(Candidato.puntaje.desc()).all()
+    # 🔹 Cargar postulaciones en lugar de candidatos
+    postulaciones = Postulacion.query.filter_by(idOfer=idOfer).order_by(Postulacion.puntaje.desc()).all() if idOfer else Postulacion.query.order_by(Postulacion.puntaje.desc()).all()
 
-    if not candidatos:
+    if not postulaciones:
         return render_template("postulantes.html", 
-                               mensaje="No hay candidatos disponibles.", 
+                               mensaje="No hay postulaciones disponibles.", 
                                ofertas=OfertaLaboral.query.all(), 
                                idOfer=idOfer)
-    # 🏆 Generar tabla de ranking de aptos con tu lógica actual
+
+    # 🏆 Generar tabla con los datos actualizados
     dataSet = pd.DataFrame([{
-        "Nombre": c.nombre,
-        "Apellido": c.apellido,
-        "Email": c.mail,
-        "Telefono": c.telefono,
-        "Ubicacion": c.ubicacion,
-        "Experiencia": c.experiencia,
-        "Educacion": c.idedu,
-        "Tecnologías": c.idtec,
-        "Habilidades": c.idhab,
-        "Tecnologías2": c.idtec2,
-        "Habilidades2": c.idhab2,
-        "Oferta Laboral": c.oferta.nombre,
-        "Apto": "Apto" if c.aptitud is True else ("No apto" if c.aptitud is False else "Sin revisar"),
-        "Puntaje": c.puntaje
-    } for c in candidatos])
+        "Nombre": p.candidato.nombre,
+        "Apellido": p.candidato.apellido,
+        "Email": p.candidato.mail,
+        "Telefono": p.candidato.telefono,
+        "Ubicacion": p.candidato.ubicacion,
+        "Experiencia": p.experiencia,
+        "Educacion": p.idedu,
+        "Tecnologías": p.idtec,
+        "Habilidades": p.idhab,
+        "Tecnologías2": p.idtec2,
+        "Habilidades2": p.idhab2,
+        "Oferta Laboral": p.oferta.nombre,
+        "Apto": "Apto" if p.aptitud is True else ("No apto" if p.aptitud is False else "Sin revisar"),
+        "Puntaje": p.puntaje
+    } for p in postulaciones])
 
     # Mapear nombres de educación, tecnología y habilidades como ya lo hacías
     educacion_map = {edu.idedu: edu.nombre for edu in Educacion.query.all()}
@@ -857,10 +901,9 @@ def postulantes():
         dataSet = dataSet[dataSet["Apto"] == "Apto"]
 
     tabla_html = dataSet.to_html(classes="table table-striped", index=False)
-    return render_template("postulantes.html", 
-                           tabla=tabla_html, 
-                           ofertas=OfertaLaboral.query.all(), 
-                           idOfer=idOfer)
+    return render_template("postulantes.html", tabla=tabla_html, ofertas=OfertaLaboral.query.all(), idOfer=idOfer)
+
+
 
 def predecir_postulantes_automatica(idOfer):
     candidatos = Candidato.query.filter_by(idOfer=idOfer).all()
@@ -1214,7 +1257,7 @@ def extraer_info_cv_pdf(file_storage):
 @app.route("/cargarCV", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])
 def cargarCV():
-    # Obtener todas las ofertas laborales disponibles
+    # 📌 Obtener todas las opciones de oferta laboral activas
     opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
     opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
     opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
@@ -1230,7 +1273,7 @@ def cargarCV():
     session["opciones_habilidades2"] = opciones_habilidades2
 
     if request.method == "POST":
-        # Si se sube un CV PDF, extraer datos y volver a mostrar el formulario
+        # 📌 Procesar archivo PDF si se sube un CV
         if "cv_pdf" in request.files:
             file = request.files["cv_pdf"]
             
@@ -1239,7 +1282,7 @@ def cargarCV():
                 file.seek(0, os.SEEK_END)
                 size = file.tell()
                 file.seek(0)
-               
+
                 if size > 5 * 1024 * 1024:
                     flash("❌El archivo excede el tamaño máximo permitido de 5 MB.", category="pdf")
                     return redirect("/cargarCV")
@@ -1265,8 +1308,7 @@ def cargarCV():
                 flash("❌Debes seleccionar un archivo PDF válido para continuar.", category="pdf")
                 return redirect("/cargarCV")
             
-            
-        # Obtener datos del formulario
+        # 📌 Obtener datos del formulario
         nombre = request.form["nombre"]
         apellido = request.form["apellido"]
         email = request.form["email"]
@@ -1278,14 +1320,30 @@ def cargarCV():
         habilidades = request.form["habilidades"]
         tecnologias2 = request.form["tecnologias2"]
         habilidades2 = request.form["habilidades2"]
-        idOfer = request.form.get("idOfer")  # Nueva variable para oferta laboral
+        idOfer = request.form.get("idOfer")  
 
         if not idOfer:
             flash("Debes seleccionar una oferta laboral.")
             return redirect("/cargarCV")
 
         try:
-            # Buscar el ID correspondiente en las tablas
+            # 📌 Buscar el candidato en la base de datos (evitar duplicaciones)
+            candidato = Candidato.query.filter_by(mail=email).first()
+
+            if not candidato:
+                # 🔹 Crear un nuevo candidato si no existe
+                candidato = Candidato(
+                    id=email,
+                    nombre=nombre,
+                    apellido=apellido,
+                    mail=email,
+                    telefono=telefono,
+                    ubicacion=ubicacion
+                )
+                db.session.add(candidato)
+                db.session.flush()  # Para obtener el ID antes de la postulación
+
+            # 📌 Buscar IDs correspondientes
             educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
             tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
             habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
@@ -1296,39 +1354,29 @@ def cargarCV():
                 flash("Error: Valores inválidos seleccionados.")
                 return redirect("/cargarCV")
 
-            idedu = educacion_obj.idedu
-            idtec = tecnologia_obj.idtec
-            idhab = habilidad_obj.idhab
-            idtec2 = tecnologia2_obj.idtec2
-            idhab2 = habilidad2_obj.idhab2
-
-            # Crear y guardar el candidato con la oferta laboral seleccionada
-            nuevo_candidato_db = Candidato(
-                id=email,
-                nombre=nombre,
-                apellido=apellido,
-                mail=email,
-                telefono=telefono,
-                ubicacion=ubicacion,
+            # 📌 Crear una nueva **Postulación** asociando el candidato con la oferta laboral
+            nueva_postulacion = Postulacion(
+                idCandidato=candidato.id,
+                idOfer=idOfer,
+                aptitud=None,
+                puntaje=0,
                 experiencia=experiencia,
-                idedu=idedu,
-                idtec=idtec,
-                idhab=idhab,
-                idtec2=idtec2,
-                idhab2=idhab2,
-                idOfer=idOfer,  # Asociación con la oferta laboral
-                aptitud=None
+                idedu=educacion_obj.idedu,
+                idtec=tecnologia_obj.idtec,
+                idhab=habilidad_obj.idhab,
+                idtec2=tecnologia2_obj.idtec2,
+                idhab2=habilidad2_obj.idhab2
             )
-            db.session.add(nuevo_candidato_db)
+            db.session.add(nueva_postulacion)
             db.session.commit()
-            flash(f"✔️Candidato {nombre} guardado correctamente y asociado a la oferta laboral '{OfertaLaboral.query.get(idOfer).nombre}'.", category="form")
+            flash(f"✔️Postulación de {nombre} registrada exitosamente en la oferta laboral '{OfertaLaboral.query.get(idOfer).nombre}'.", category="form")
         except Exception as e:
-            flash(f"❌Este mail ya estaba registrado en esta postulación", category="form")
+            flash("❌Error al procesar la postulación.", category="form")
             return redirect("/cargarCV")
 
     return render_template(
         "cargarCV.html",
-        opciones_ofertas=session["opciones_ofertas"],  # Pasamos ofertas al HTML
+        opciones_ofertas=session["opciones_ofertas"],  
         opciones_educacion=session["opciones_educacion"],
         opciones_tecnologias=session["opciones_tecnologias"],
         opciones_habilidades=session["opciones_habilidades"],
@@ -1342,10 +1390,11 @@ def cargarCV():
 def mostrar_etiquetas(idOfer=None):
     ofertas = OfertaLaboral.query.all()
     ofertas_activas = OfertaLaboral.query.filter_by(estado="Activa").all()
+    
     if not idOfer:
         idOfer = request.form.get("idOfer") if request.method == "POST" else request.args.get("idOfer")
         if not idOfer and ofertas:
-            idOfer = ofertas[0].idOfer  # Primera oferta como default
+            idOfer = ofertas[0].idOfer  
 
     educaciones, tecnologias, habilidades, tecnologias2, habilidades2 = [], [], [], [], []
 
@@ -1357,19 +1406,19 @@ def mostrar_etiquetas(idOfer=None):
         tecnologias2 = OfertaTecnologia2.query.filter_by(idOfer=idOfer).all()
         habilidades2 = OfertaHabilidad2.query.filter_by(idOfer=idOfer).all()
 
-        # Generar DataFrames con datos recién recuperados
+        # 📌 Generar DataFrames con datos recién recuperados
         df_edu = pd.DataFrame([{"Nombre": e.educacion.nombre, "Valor": e.importancia} for e in educaciones]) if educaciones else pd.DataFrame()
         df_tec = pd.DataFrame([{"Nombre": t.tecnologia.nombre, "Valor": t.importancia} for t in tecnologias]) if tecnologias else pd.DataFrame()
         df_hab = pd.DataFrame([{"Nombre": h.habilidad.nombre, "Valor": h.importancia} for h in habilidades]) if habilidades else pd.DataFrame()
-        df_tec2 = pd.DataFrame([{"Nombre": t2.tecnologia.nombre, "Valor": t2.importancia} for t2 in tecnologias]) if tecnologias2 else pd.DataFrame()
-        df_hab2 = pd.DataFrame([{"Nombre": h2.habilidad.nombre, "Valor": h2.importancia} for h2 in habilidades]) if habilidades2 else pd.DataFrame()
+        df_tec2 = pd.DataFrame([{"Nombre": t2.tecnologia2.nombre, "Valor": t2.importancia} for t2 in tecnologias2]) if tecnologias2 else pd.DataFrame()
+        df_hab2 = pd.DataFrame([{"Nombre": h2.habilidad2.nombre, "Valor": h2.importancia} for h2 in habilidades2]) if habilidades2 else pd.DataFrame()
 
-        # Convertir DataFrames a tablas HTML
+        # 📌 Convertir DataFrames a tablas HTML
         tabla_edu = df_edu.to_html(classes="table table-bordered", index=False) if not df_edu.empty else "<p>No hay etiquetas de educación</p>"
         tabla_tec = df_tec.to_html(classes="table table-bordered", index=False) if not df_tec.empty else "<p>No hay etiquetas de tecnología</p>"
-        tabla_tec2 = df_tec2.to_html(classes="table table-bordered", index=False) if not df_tec2.empty else "<p>No hay etiquetas de tecnología</p>"
+        tabla_tec2 = df_tec2.to_html(classes="table table-bordered", index=False) if not df_tec2.empty else "<p>No hay etiquetas de tecnología secundaria</p>"
         tabla_hab = df_hab.to_html(classes="table table-bordered", index=False) if not df_hab.empty else "<p>No hay etiquetas de habilidades</p>"
-        tabla_hab2 = df_hab2.to_html(classes="table table-bordered", index=False) if not df_hab2.empty else "<p>No hay etiquetas de habilidades</p>"
+        tabla_hab2 = df_hab2.to_html(classes="table table-bordered", index=False) if not df_hab2.empty else "<p>No hay etiquetas de habilidades secundarias</p>"
     else:
         oferta, tabla_edu, tabla_tec, tabla_tec2, tabla_hab, tabla_hab2 = None, "", "", "", "", ""
 
@@ -1377,7 +1426,7 @@ def mostrar_etiquetas(idOfer=None):
                            ofertas=ofertas,
                            ofertas_activas=ofertas_activas,
                            oferta=oferta,
-                           idOfer=idOfer,  # 🔹 Pasar la oferta seleccionada al HTML
+                           idOfer=idOfer,  
                            tabla_edu=tabla_edu,
                            tabla_tec=tabla_tec,
                            tabla_hab=tabla_hab,
@@ -1390,6 +1439,7 @@ def mostrar_etiquetas(idOfer=None):
                            habilidades2=habilidades2)
 
 
+
 @app.route("/asignar_valores/<int:idOfer>", methods=["POST"])
 @login_required(roles=["Admin_RRHH"])
 def asignar_valores(idOfer):
@@ -1398,7 +1448,7 @@ def asignar_valores(idOfer):
         flash("Oferta no encontrada", "error")
         return redirect(url_for("dashboard"))
 
-    # Educación
+    # 📌 Educación
     educacion_id = request.form.get("educacion_id")
     valor_educacion = request.form.get("valor_educacion")
     if valor_educacion:
@@ -1406,15 +1456,15 @@ def asignar_valores(idOfer):
         if edu_rel:
             edu_rel.importancia = int(valor_educacion)
 
-    # Tecnología
+    # 📌 Tecnología
     tecnologia_id = request.form.get("tecnologia_id")
     valor_tecnologia = request.form.get("valor_tecnologia")
     if valor_tecnologia:
         tec_rel = OfertaTecnologia.query.filter_by(idOfer=idOfer, idTec=tecnologia_id).first()
         if tec_rel:
             tec_rel.importancia = int(valor_tecnologia)
-            
-        # Tecnología2
+
+    # 📌 Tecnología secundaria
     tecnologia2_id = request.form.get("tecnologia2_id")
     valor_tecnologia2 = request.form.get("valor_tecnologia2")
     if valor_tecnologia2:
@@ -1422,15 +1472,15 @@ def asignar_valores(idOfer):
         if tec2_rel:
             tec2_rel.importancia = int(valor_tecnologia2)
 
-    # Habilidad
+    # 📌 Habilidad
     habilidad_id = request.form.get("habilidad_id")
     valor_habilidad = request.form.get("valor_habilidad")
     if valor_habilidad:
         hab_rel = OfertaHabilidad.query.filter_by(idOfer=idOfer, idHab=habilidad_id).first()
         if hab_rel:
             hab_rel.importancia = int(valor_habilidad)
-            
-    # Habilidad2
+
+    # 📌 Habilidad secundaria
     habilidad2_id = request.form.get("habilidad2_id")
     valor_habilidad2 = request.form.get("valor_habilidad2")
     if valor_habilidad2:
@@ -1441,7 +1491,7 @@ def asignar_valores(idOfer):
     db.session.commit()
     flash("Importancia actualizada correctamente", "success")
 
-    return mostrar_etiquetas(idOfer)  # 🔹 Recuperamos datos actualizados antes de renderizar
+    return mostrar_etiquetas(idOfer)
 
 
 @app.route("/metricas")
@@ -1463,21 +1513,21 @@ def obtener_metricas(oferta_id):
         promedios = {}
         for rel in query:
             etiqueta = nombre_func(rel)
-            candidatos = Candidato.query.filter_by(idOfer=oferta_id, **etiqueta["filtro"]).all()
+            postulaciones = Postulacion.query.filter_by(idOfer=oferta_id, **etiqueta["filtro"]).all()  # 📌 Ahora sobre `Postulacion`
             etiquetas.append(etiqueta["nombre"])
-            cantidades.append(len(candidatos))
+            cantidades.append(len(postulaciones))
             promedios[etiqueta["nombre"]] = (
-                sum(c.experiencia for c in candidatos) / len(candidatos) if candidatos else 0
+                sum(p.experiencia for p in postulaciones) / len(postulaciones) if postulaciones else 0
             )
         return etiquetas, cantidades, promedios
 
-    # Educación
+    # 📌 Educación
     edu_etiquetas, edu_cant, edu_exp = obtener_datos_por_etiqueta(
         oferta.educaciones,
         lambda rel: {"nombre": rel.educacion.nombre, "filtro": {"idedu": rel.idEdu}}
     )
 
-    # Tecnología
+    # 📌 Tecnología
     tec_etiquetas, tec_cant, tec_exp = obtener_datos_por_etiqueta(
         oferta.tecnologias,
         lambda rel: {"nombre": rel.tecnologia.nombre, "filtro": {"idtec": rel.idTec}}
@@ -1488,7 +1538,7 @@ def obtener_metricas(oferta_id):
         lambda rel: {"nombre": rel.tecnologia2.nombre, "filtro": {"idtec2": rel.idTec2}}
     )
 
-    # Habilidad
+    # 📌 Habilidad
     hab_etiquetas, hab_cant, hab_exp = obtener_datos_por_etiqueta(
         oferta.habilidades,
         lambda rel: {"nombre": rel.habilidad.nombre, "filtro": {"idhab": rel.idHab}}
@@ -1499,17 +1549,17 @@ def obtener_metricas(oferta_id):
         lambda rel: {"nombre": rel.habilidad2.nombre, "filtro": {"idhab2": rel.idHab2}}
     )
 
-    # Provincias
-    provincias_candidatos = {}
-    for c in Candidato.query.filter_by(idOfer=oferta_id).all():
-        prov = c.ubicacion
-        provincias_candidatos[prov] = provincias_candidatos.get(prov, 0) + 1
+    # 📌 Provincias
+    provincias_postulantes = {}
+    for p in Postulacion.query.filter_by(idOfer=oferta_id).all():
+        prov = p.candidato.ubicacion  # 📌 Ahora accedemos desde `Postulacion.candidato`
+        provincias_postulantes[prov] = provincias_postulantes.get(prov, 0) + 1
 
-    # Totales
-    total_candidatos = Candidato.query.filter_by(idOfer=oferta_id).count()
-    aptos = Candidato.query.filter_by(idOfer=oferta_id, aptitud=True).count()
-    no_aptos = Candidato.query.filter_by(idOfer=oferta_id, aptitud=False).count()
-    sin_revisar = Candidato.query.filter_by(idOfer=oferta_id, aptitud=None).count()
+    # 📌 Totales
+    total_postulantes = Postulacion.query.filter_by(idOfer=oferta_id).count()
+    aptos = Postulacion.query.filter_by(idOfer=oferta_id, aptitud=True).count()
+    no_aptos = Postulacion.query.filter_by(idOfer=oferta_id, aptitud=False).count()
+    sin_revisar = Postulacion.query.filter_by(idOfer=oferta_id, aptitud=None).count()
 
     return jsonify({
         "etiquetas_educacion": edu_etiquetas,
@@ -1532,13 +1582,14 @@ def obtener_metricas(oferta_id):
         "cant_habilidad2": hab2_cant,
         "exp_habilidad2": hab2_exp,
 
-        "total_candidatos": total_candidatos,
+        "total_postulantes": total_postulantes,
         "aptos": aptos,
         "no_aptos": no_aptos,
         "sin_revisar": sin_revisar,
 
-        "provincias_candidatos": provincias_candidatos
+        "provincias_postulantes": provincias_postulantes
     })
+
 
 
 if __name__ == "__main__":
