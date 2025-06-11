@@ -1,3 +1,4 @@
+import requests
 from flask import Flask, redirect, render_template, request, send_file, session, url_for, flash, has_request_context
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
@@ -22,7 +23,7 @@ from functools import wraps
 from datetime import datetime
 from flask import jsonify
 import fitz
-
+from datetime import datetime, timedelta
 
 
 app = Flask(__name__)
@@ -88,6 +89,7 @@ class OfertaLaboral(db.Model):
     nombre = db.Column(db.String(200), nullable=False, unique=True)
     fecha_cierre = db.Column(db.DateTime, nullable=False)
     max_candidatos = db.Column(db.Integer, nullable=False)
+    cant_candidatos = db.Column(db.Integer, nullable=False, default=0)
     remuneracion = db.Column(db.String(50), nullable=False)
     beneficio = db.Column(db.String(200), nullable=True)
     estado = db.Column(db.String(50), nullable=False, default="Activa")
@@ -609,9 +611,11 @@ def ver_ofertas():
         "ID Oferta": o.idOfer,
         "Nombre": o.nombre,
         "Fecha de Cierre": o.fecha_cierre.strftime("%Y-%m-%d"),
+        "Cantidad de Candidatos": o.cant_candidatos,
         "Máx. Candidatos": o.max_candidatos,
         "Remuneración": o.remuneracion,
         "Beneficio": o.beneficio,
+        "tipo": o.modalidad,
         "Estado": o.estado,
         "Responsable": o.usuario_responsable,
         "Acción": f'<form style="display: inline-block; width: 110px; height: 35px; margin: 0 auto;" method="POST" action="{url_for("cerrar_oferta", idOfer=o.idOfer)}">'
@@ -631,23 +635,50 @@ def ver_ofertas():
 def cerrar_oferta(idOfer):
     oferta = OfertaLaboral.query.get(idOfer)
 
-    if not oferta or oferta.fecha_cierre <= datetime.now():
+    if not oferta or oferta.estado == "Cerrada":
         flash("La oferta ya está cerrada o no existe.", "error")
         return redirect(url_for("ver_ofertas"))
 
-    oferta.fecha_cierre = datetime.now()  # 🔹 Fecha de cierre en el momento actual
-    oferta.estado = "Cerrada"
-    
+    # 🧠 Verificar si debe cerrarse por fecha o por cantidad
+    if oferta.fecha_cierre <= datetime.now() or oferta.cant_candidatos >= oferta.max_candidatos:
+        oferta.fecha_cierre = datetime.now()
+        oferta.estado = "Cerrada"
 
-    predecir_postulantes_automatica(oferta.idOfer)
-    asignar_puntajes_automatica(oferta.idOfer)
+        predecir_postulantes_automatica(oferta.idOfer)
+        asignar_puntajes_automatica(oferta.idOfer)
+        enviar_correos_automatica(oferta.idOfer)
 
-    enviar_correos_automatica(oferta.idOfer)
-    
+        db.session.commit()
+        flash(f"La oferta '{oferta.nombre}' ha sido cerrada correctamente.", "success")
+    else:
+        flash("La oferta aún no puede cerrarse automáticamente.", "warning")
+
+    return redirect(url_for("ver_ofertas"))
+
+@app.route("/limpiar_ofertas", methods=["POST"])
+@login_required(roles=["Admin_RRHH"])
+def limpiar_ofertas_expiradas():
+    umbral = datetime.now() - timedelta(hours=24)
+
+    ofertas_a_eliminar = OfertaLaboral.query.filter(
+        OfertaLaboral.estado == "Cerrada",
+        OfertaLaboral.fecha_cierre <= umbral
+    ).all()
+
+    eliminadas = [oferta.nombre for oferta in ofertas_a_eliminar]
+
+    for oferta in ofertas_a_eliminar:
+        db.session.delete(oferta)
+
     db.session.commit()
 
-    flash(f"La oferta '{oferta.nombre}' ha sido cerrada correctamente.", "success")
+    if eliminadas:
+        flash(f"🗑 Se eliminaron {len(eliminadas)} ofertas cerradas: {', '.join(eliminadas)}", "success")
+    else:
+        flash("✅ No hay ofertas cerradas hace más de 24hs para eliminar.", "info")
+
     return redirect(url_for("ver_ofertas"))
+
 
 
 # Página de estadísticas
@@ -1233,7 +1264,6 @@ def extraer_info_cv_pdf(file_storage):
 @app.route("/cargarCV", methods=["GET", "POST"])
 @login_required(roles=["Admin_RRHH"])
 def cargarCV():
-    # 📌 Obtener todas las opciones de oferta laboral activas
     opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
     opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
     opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
@@ -1249,10 +1279,8 @@ def cargarCV():
     session["opciones_habilidades2"] = opciones_habilidades2
 
     if request.method == "POST":
-        # 📌 Procesar archivo PDF si se sube un CV
         if "cv_pdf" in request.files:
             file = request.files["cv_pdf"]
-            
             if file and file.filename.endswith(".pdf"):
                 try:
                     info = extraer_info_cv_pdf(file)
@@ -1270,12 +1298,10 @@ def cargarCV():
                 except Exception:
                     flash("❌El archivo no es un PDF válido o está dañado.", category="pdf")
                     return redirect("/cargarCV")
-                
             else:
                 flash("❌Debes seleccionar un archivo PDF válido para continuar.", category="pdf")
                 return redirect("/cargarCV")
 
-        # 📌 Obtener datos del formulario
         nombre = request.form["nombre"]
         apellido = request.form["apellido"]
         email = request.form["email"]
@@ -1287,17 +1313,21 @@ def cargarCV():
         habilidades = request.form["habilidades"]
         tecnologias2 = request.form["tecnologias2"]
         habilidades2 = request.form["habilidades2"]
-        idOfer = request.form.get("idOfer")  
+        idOfer = request.form.get("idOfer")
 
         if not idOfer:
             flash("Debes seleccionar una oferta laboral.")
             return redirect("/cargarCV")
 
         try:
-            # 📌 Buscar el candidato en la base de datos (evitar duplicaciones)
+            oferta = OfertaLaboral.query.get(idOfer)
+
+            if oferta.estado == "Cerrada":
+                flash("❌La oferta ya alcanzó el máximo de postulaciones.", category="form")
+                return redirect("/cargarCV")
+
             candidato = Candidato.query.filter_by(mail=email).first()
 
-            # 📌 Buscar IDs correspondientes
             educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
             tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
             habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
@@ -1309,7 +1339,6 @@ def cargarCV():
                 return redirect("/cargarCV")
 
             if candidato:
-                # 📌 Si el candidato ya existe, actualizar sus datos
                 candidato.experiencia = experiencia
                 candidato.idedu = educacion_obj.idedu
                 candidato.idtec = tecnologia_obj.idtec
@@ -1318,7 +1347,6 @@ def cargarCV():
                 candidato.idhab2 = habilidad2_obj.idhab2
                 db.session.add(candidato)
             else:
-                # 📌 Crear un nuevo candidato
                 candidato = Candidato(
                     id=email,
                     nombre=nombre,
@@ -1335,7 +1363,6 @@ def cargarCV():
                 )
                 db.session.add(candidato)
 
-            # 📌 Crear la postulación con los datos actualizados
             nueva_postulacion = Postulacion(
                 idCandidato=candidato.id,
                 idOfer=idOfer,
@@ -1349,22 +1376,36 @@ def cargarCV():
                 puntaje=0
             )
             db.session.add(nueva_postulacion)
+
+            oferta.cant_candidatos += 1
+            db.session.add(oferta)
             db.session.commit()
 
-            flash(f"✔️Postulación de {nombre} registrada en la oferta '{OfertaLaboral.query.get(idOfer).nombre}'.", category="form")
+            if oferta.cant_candidatos >= oferta.max_candidatos:
+                cerrar_url = request.host_url.rstrip("/") + url_for("cerrar_oferta", idOfer=oferta.idOfer)
+                try:
+                    requests.post(cerrar_url, cookies=request.cookies)
+                except Exception as e:
+                    flash("⚠️ No se pudo cerrar automáticamente la oferta. Intentalo manualmente.", "warning")
+
+            
+            flash(f"✔️Postulación de {nombre} registrada en la oferta '{oferta.nombre}'.", category="form")
+
         except Exception as e:
             flash("❌Error al procesar la postulación.", category="form")
             return redirect("/cargarCV")
-
+        
+    opciones_ofertas = [{"idOfer": o.idOfer, "nombre": o.nombre} for o in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
     return render_template(
         "cargarCV.html",
-        opciones_ofertas=session["opciones_ofertas"],  
+        opciones_ofertas=session["opciones_ofertas"],
         opciones_educacion=session["opciones_educacion"],
         opciones_tecnologias=session["opciones_tecnologias"],
         opciones_habilidades=session["opciones_habilidades"],
         opciones_tecnologias2=session["opciones_tecnologias2"],
         opciones_habilidades2=session["opciones_habilidades2"]
     )
+
 
 
 
