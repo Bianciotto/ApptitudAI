@@ -44,7 +44,7 @@ email = Mail(app)
 
 
 # Base de datos
-    
+
 class Candidato(db.Model):
     __tablename__ = "candidato"
     id = db.Column(db.String, primary_key=True)  # Usamos el correo como ID único
@@ -1300,9 +1300,9 @@ def extraer_info_cv_pdf(file_storage):
             break
 
     if tec_encontradas:
-        info["tecnologia1"] = tec_encontradas[0]
+        info["tecnologias"] = tec_encontradas[0]
         if len(tec_encontradas) > 1:
-            info["tecnologia2"] = tec_encontradas[1]
+            info["tecnologias2"] = tec_encontradas[1]
 
     # Habilidades (primeras 2 que matcheen)
     habilidades = [h.nombre for h in Habilidad.query.all()]
@@ -1324,9 +1324,9 @@ def extraer_info_cv_pdf(file_storage):
             break
 
     if hab_encontradas:
-        info["habilidad1"] = hab_encontradas[0]
+        info["habilidades"] = hab_encontradas[0]
         if len(hab_encontradas) > 1:
-            info["habilidad2"] = hab_encontradas[1]
+            info["habilidades2"] = hab_encontradas[1]
 
     # Ubicación (primera provincia argentina encontrada)
     provincias = [
