@@ -374,6 +374,81 @@ def analista():
         return f"Bienvenido {session.get('username')} al panel de Analista de Datos."
     return redirect('/login')
 
+@app.route('/gestionar_usuarios', methods=['GET', 'POST'])
+@login_required(roles=["Admin_RRHH"])
+def gestionar_usuarios():
+    filtro = request.args.get('rol')
+    if filtro:
+        usuarios = Usuario.query.filter(Usuario.type == filtro).all()
+    else:
+        usuarios = Usuario.query.all()
+    return render_template('gestionarUsuarios.html', usuarios=usuarios, filtro=filtro)
+
+@app.route('/crear_usuario', methods=["GET", "POST"])
+@login_required(roles=["Admin_RRHH"])
+def crear_usuario():
+    if request.method == "POST":
+        username = request.form['username']
+        password = generate_password_hash(request.form['password'], method="pbkdf2:sha256")
+        type = request.form['type']
+        nuevo = Usuario(username=username, password=password, type=type)
+        db.session.add(nuevo)
+        db.session.commit()
+        flash("Usuario creado")
+        return redirect(url_for('gestionarUsuarios'))
+    return render_template("crear_usuario.html")
+
+@app.route('/cambiar_password', methods=["GET", "POST"])
+@login_required()
+def cambiar_password():
+    if request.method == "POST":
+        actual = request.form['actual']
+        nueva = request.form['nueva']
+        usuario = Usuario.query.filter_by(username=session['username']).first()
+        if check_password_hash(usuario.password, actual):
+            usuario.password = generate_password_hash(nueva)
+            db.session.commit()
+            flash("Contraseña actualizada")
+        else:
+            flash("Contraseña actual incorrecta")
+    return render_template("cambiar_password.html")
+
+@app.route('/editar_usuario/<int:id>', methods=["GET", "POST"])
+@login_required(roles=["Admin_RRHH"])
+def editar_usuario(id):
+    usuario = Usuario.query.get_or_404(id)
+
+    if request.method == "POST":
+        usuario.username = request.form['username']
+        nuevo_tipo = request.form['type']
+        nueva_clave = request.form['password']
+
+        if nuevo_tipo:
+            usuario.type = nuevo_tipo
+
+        if nueva_clave:
+            usuario.password = generate_password_hash(nueva_clave, method="pbkdf2:sha256")
+
+        db.session.commit()
+        flash("Usuario actualizado correctamente")
+        return redirect(url_for('gestionar_usuarios'))
+
+    return render_template("editar_usuario.html", usuario=usuario)
+
+@app.route('/eliminar_usuario/<int:id>', methods=["POST", "GET"])
+@login_required(roles=["Admin_RRHH"])
+def eliminar_usuario(id):
+    usuario = Usuario.query.get_or_404(id)
+
+    # Evitar que se elimine a sí mismo
+    if usuario.username == session.get('username'):
+        flash("No puedes eliminar tu propia cuenta", "error")
+        return redirect(url_for("gestionar_usuarios"))
+
+    db.session.delete(usuario)
+    db.session.commit()
+    flash("Usuario eliminado con éxito", "success")
+    return redirect(url_for("gestionar_usuarios"))
 
 
 @app.route('/enviar_correos')
@@ -1483,6 +1558,32 @@ def mostrar_etiquetas(idOfer=None):
                            tecnologias2=tecnologias2,
                            habilidades2=habilidades2)
 
+
+@app.route("/importancia/<tipo>/<int:id>", methods=["POST"])
+@login_required(roles=["Admin_RRHH"])
+def actualizar_importancia(tipo, id):
+    data = request.get_json()
+    importancia = int(data["importancia"])
+
+    modelos = {
+        "educacion": OfertaEducacion,
+        "tecnologia": OfertaTecnologia,
+        "tecnologia2": OfertaTecnologia2,
+        "habilidad": OfertaHabilidad,
+        "habilidad2": OfertaHabilidad2
+    }
+
+    modelo = modelos.get(tipo)
+    if not modelo:
+        return jsonify({"error": "Tipo inválido"}), 400
+
+    relacion = db.session.get(modelo, id)
+    if not relacion:
+        return jsonify({"error": "Etiqueta no encontrada"}), 404
+
+    relacion.importancia = importancia
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 @app.route("/asignar_valores/<int:idOfer>", methods=["POST"])

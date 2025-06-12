@@ -2,12 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Ver Ofertas Laborales</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='ver_ofertas.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postulantes Predicción</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='editar_usuario.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body>
-    <header>
+
+<header>
         <div class="logo">
             <img src="{{ url_for('static', filename='images/logoApptitudAI.png') }}" alt="AI Logo">
         </div>
@@ -56,6 +57,9 @@
         <a href="{{ url_for('mostrar_etiquetas') }}"><i class="fas fa-tags"></i>  Configurar Etiquetas</a>
       </div>
     </details>
+
+
+
     <!-- Menú desplegable: Metricas-->
     <details>
       <summary>
@@ -67,6 +71,8 @@
         <a href="{{ url_for('metricas', oferta_id=idOfer) }}"><i class="fas fa-list"></i> Ver métricas</a>
 
       </div>
+
+      
     </details>
 
     <!-- Menú desplegable: Volver al inicio-->
@@ -75,6 +81,7 @@
       </div>
 
   </nav>
+  
   <div class="support-button-wrapper">
   <div class="nav-link support-button">
     <i class="fas fa-headset"></i> Soporte
@@ -94,6 +101,7 @@
   </div>
 </div>
 </aside>
+
 <!-- MENU DE USUARIO -->
     <div class="user-menu-wrapper">
         
@@ -119,42 +127,34 @@
       <a href="{{ url_for('gestionar_usuarios') }}">Gestiónar Roles</a>
     </div>
   </section>
+
 </div>
     </header>
 
 
-    <h1>Ver<span class="subtitulo">Ofertas Laborales</span></h1>
-
-    <div class="tabla-container">
-        {{ tabla|safe }}
-    </div>
-
-    {% if not mensaje %}
-        <div class="acciones">
-            {% for oferta in ofertas %}
-                {% if oferta.estado == "Activa" %}
-                    <form method="POST" action="{{ url_for('cerrar_oferta', idOfer=oferta.idOfer) }}" style="display:inline;">
-                        <button type="submit">Cerrar oferta</button>
-                    </form>
-                {% endif %}
-            {% endfor %}
-        </div>
-    {% else %}
-        <p>{{ mensaje }}</p>
-    {% endif %}
-    <div style="text-align: center; margin: 0;">
-      <form method="POST" action="{{ url_for('limpiar_ofertas_expiradas') }}" 
-            style="display: inline-block;margin-left: 20px ;padding: 0px 60px; background-color: #4b0082; border-radius: 8px; box-shadow: 0 0 10px rgba(75, 0, 130, 0.5);">
-        
-        <button type="submit" style="margin: 0 !important; font-size: 13px; color: #fff; background: none; border: none; cursor: pointer;">
-          <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
-          Limpiar ofertas cerradas (+24hs)
-        </button>
-      </form>
-    </div>
+<body>
+    <form method="POST">
+      <div>
+        <label>Usuario</label>
+        <input type="text" name="username" value="{{ usuario.username }}" required>
+      </div>
+      <div>
+        <label>Rol</label>
+        <select name="type">
+          <option value="Supervisor" {% if usuario.type == "Supervisor" %}selected{% endif %}>Supervisor</option>
+          <option value="Analista_Datos" {% if usuario.type == "Analista_Datos" %}selected{% endif %}>Analista</option>
+          <option value="Admin_RRHH" {% if usuario.type == "Admin_RRHH" %}selected{% endif %}>Admin RRHH</option>
+        </select>
+      </div>
+      <div>
+        <label>Nueva contraseña (opcional)</label>
+        <input type="password" name="password" placeholder="Solo si querés cambiarla">
+      </div>
+      <button type="submit">Guardar cambios</button>
+    </form>
 </body>
 
-    <footer class="footer">
+<footer class="footer">
     <div class="footer-content">
         <div class="footer-logo">
             <img src="{{ url_for('static', filename='images/logoPerfectMatch.png') }}" alt="PF Image">
@@ -191,5 +191,4 @@
         <p>© 2025 IA para la Predicción de Candidatos.All rights reserved</p>
     </div>
 </footer>
-</body>
 </html>

@@ -121,6 +121,9 @@
     <div class="menu-list">
       <a href="{{ url_for('logout') }}">Cerrar sesión</a>
     </div>
+    <div class="menu-list">
+      <a href="{{ url_for('gestionar_usuarios') }}">Gestiónar Roles</a>
+    </div>
   </section>
 </div>
     </header>
@@ -128,14 +131,11 @@
 
 <body class="container mt-4">
     <form method="GET" action="{{ url_for('mostrar_etiquetas') }}">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
         <label for="idOfer">Selecciona una oferta laboral:</label>
         <select name="idOfer" onchange="this.form.submit()">
             {% for ofer in ofertas %}
-                <option value="{{ ofer.idOfer }}" {% if ofer.idOfer == idOfer %}selected{% endif %}>
+                <option value="{{ ofer.idOfer }}" {% if ofer.idOfer|string == idOfer|string %}selected{% endif %}>
+
                     {{ ofer.nombre }}
                 </option>
             {% endfor %}
@@ -144,108 +144,114 @@
 
 
     {% if oferta %}
-       <h1>Etiquetas para  <span class="subtitulo">"{{ oferta.nombre }}"</span></h1>
-        
-        <h3 class="titulo-centrado">Educación</h3>
-{{ tabla_edu|safe }}
+       <h3 class="titulo-centrado">Educación</h3>
+    <table class="table table-bordered">
+      <thead><tr><th>Etiqueta</th><th>Importancia</th></tr></thead>
+      <tbody>
+        {% for edu in educaciones %}
+          <tr>
+            <td>{{ edu.educacion.nombre }}</td>
+            <td>
+              {% if oferta.idOfer in ofertas_activas|map(attribute='idOfer') %}
+                <input type="number" min="0" max="3" value="{{ edu.importancia }}"
+                  class="input-importancia" data-id="{{ edu.id }}" data-tipo="educacion">
+              {% else %}
+                {{ edu.importancia }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-<h3 class="titulo-centrado">Tecnologías</h3>
-{{ tabla_tec|safe }}
+  <h3 class="titulo-centrado">Tecnologías</h3>
+  <table class="table table-bordered">
+    <thead><tr><th>Etiqueta</th><th>Importancia</th></tr></thead>
+    <tbody>
+      {% for tec in tecnologias %}
+        <tr>
+          <td>{{ tec.tecnologia.nombre }}</td>
+          <td>
+            {% if oferta.idOfer in ofertas_activas|map(attribute='idOfer') %}
+              <input type="number" min="0" max="3" value="{{ tec.importancia }}"
+                class="input-importancia" data-id="{{ tec.id }}" data-tipo="tecnologia">
+            {% else %}
+              {{ tec.importancia }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-<h3 class="titulo-centrado">Tecnologías 2</h3>
-{{ tabla_tec2|safe }}
+  <h3 class="titulo-centrado">Tecnologías 2</h3>
+  <table class="table table-bordered">
+    <thead><tr><th>Etiqueta</th><th>Importancia</th></tr></thead>
+    <tbody>
+      {% for tec2 in tecnologias2 %}
+        <tr>
+          <td>{{ tec2.tecnologia2.nombre }}</td>
+          <td>
+            {% if oferta.idOfer in ofertas_activas|map(attribute='idOfer') %}
+              <input type="number" min="0" max="3" value="{{ tec2.importancia }}"
+                class="input-importancia" data-id="{{ tec2.id }}" data-tipo="tecnologia2">
+            {% else %}
+              {{ tec2.importancia }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-<h3 class="titulo-centrado">Habilidades</h3>
-{{ tabla_hab|safe }}
+  <h3 class="titulo-centrado">Habilidades</h3>
+    <table class="table table-bordered">
+      <thead><tr><th>Etiqueta</th><th>Importancia</th></tr></thead>
+      <tbody>
+        {% for hab in habilidades %}
+          <tr>
+            <td>{{ hab.habilidad.nombre }}</td>
+            <td>
+              {% if oferta.idOfer in ofertas_activas|map(attribute='idOfer') %}
+                <input type="number" min="0" max="3" value="{{ hab.importancia }}"
+                  class="input-importancia" data-id="{{ hab.id }}" data-tipo="habilidad">
+              {% else %}
+                {{ hab.importancia }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-<h3 class="titulo-centrado">Habilidades 2</h3>
-{{ tabla_hab2|safe }}
+  <h3 class="titulo-centrado">Habilidades 2</h3>
+    <table class="table table-bordered">
+      <thead><tr><th>Etiqueta</th><th>Importancia</th></tr></thead>
+      <tbody>
+        {% for hab2 in habilidades2 %}
+          <tr>
+            <td>{{ hab2.habilidad2.nombre }}</td>
+            <td>
+              {% if oferta.idOfer in ofertas_activas|map(attribute='idOfer') %}
+                <input type="number" min="0" max="3" value="{{ hab2.importancia }}"
+                  class="input-importancia" data-id="{{ hab2.id }}" data-tipo="habilidad2">
+              {% else %}
+                {{ hab2.importancia }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
     {% else %}
         <p>No hay ofertas laborales disponibles.</p>
     {% endif %}
-    
-    <!--<hr class="my-4">-->
-  {% if oferta and oferta.idOfer in ofertas_activas|map(attribute='idOfer') %}
-    <h3 style="text-align: center; display: block; margin-left: auto; margin-right: auto;">Asignar nueva importancia (de 0 a 3)</h3>
-    <form method="POST" action="{{ url_for('asignar_valores', idOfer=idOfer) }}">
-         <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <label for="educacion_id" class="form-label">Educación:</label>
-                <select name="educacion_id" class="form-select">
-                    {% if educaciones %}
-                        {% for e in educaciones %}
-                            <option value="{{ e.idEdu }}">{{ e.educacion.nombre }}</option>
-                        {% endfor %}
-                    {% else %}
-                        <option disabled>No hay etiquetas de educación</option>
-                    {% endif %}
-                </select>
-                <input type="number" name="valor_educacion" class="form-control mt-2" min="0" max="3" placeholder="Importancia">
-            </div>
-            <div class="col-md-4">
-                <label for="tecnologia_id" class="form-label">Tecnología:</label>
-                <select name="tecnologia_id" class="form-select">
-                    {% if tecnologias %}
-                        {% for t in tecnologias %}
-                            <option value="{{ t.idTec }}">{{ t.tecnologia.nombre }}</option>
-                        {% endfor %}
-                    {% else %}
-                        <option disabled>No hay etiquetas de tecnología</option>
-                    {% endif %}
-                </select>
-                <input type="number" name="valor_tecnologia" class="form-control mt-2" min="0" max="3" placeholder="Importancia">
-            </div>
-            <div class="col-md-4">
-                <label for="tecnologia2_id" class="form-label">Tecnología2:</label>
-                <select name="tecnologia2_id" class="form-select">
-                    {% if tecnologias2 %}
-                        {% for t2 in tecnologias2 %}
-                            <option value="{{ t2.idTec2 }}">{{ t2.tecnologia2.nombre }}</option>
-                        {% endfor %}
-                    {% else %}
-                        <option disabled>No hay etiquetas de tecnología2</option>
-                    {% endif %}
-                </select>
-                <input type="number" name="valor_tecnologia" class="form-control mt-2" min="0" max="3" placeholder="Importancia">
-            </div>
-            <div class="col-md-4">
-                <label for="habilidad_id" class="form-label">Habilidad:</label>
-                <select name="habilidad_id" class="form-select">
-                    {% if habilidades %}
-                        {% for h in habilidades %}
-                            <option value="{{ h.idHab }}">{{ h.habilidad.nombre }}</option>
-                        {% endfor %}
-                    {% else %}
-                        <option disabled>No hay etiquetas de habilidades</option>
-                    {% endif %}
-                </select>
-                <input type="number" name="valor_habilidad" class="form-control mt-2" min="0" max="3" placeholder="Importancia">
-            </div>
-            <div class="col-md-4">
-                <label for="habilidad2_id" class="form-label">Habilidad2:</label>
-                <select name="habilidad2_id" class="form-select">
-                    {% if habilidades2 %}
-                        {% for h2 in habilidades2 %}
-                            <option value="{{ h2.idHab2 }}">{{ h2.habilidad2.nombre }}</option>
-                        {% endfor %}
-                    {% else %}
-                        <option disabled>No hay etiquetas de habilidades2</option>
-                    {% endif %}
-                </select>
-                <input type="number" name="valor_habilidad" class="form-control mt-2" min="0" max="3" placeholder="Importancia">
-            </div>
-        </div>
-        </div>
 
-        <button type="submit" class="btn btn-primary">Guardar valores</button>
-    </form>
-  {% endif %}
+  <script src="{{ url_for('static', filename='js/cambioImportancia.js') }}"></script>
+
 </body>
+
 <footer class="footer">
     <div class="footer-content">
         <div class="footer-logo">
