@@ -39,9 +39,8 @@ def test_login_valid_credentials_params(client, user, passw):
 )
 def test_login_invalid_credentials_params(client, user, passw):
     # Simulo una solicitud POST con credenciales inválidas
-    response = client.post('/login', data={'username': user, 'password': passw})
-    assert response.status_code == 200
-    # assert b"Credenciales inválidas" in response.data
+   response = client.post('/login', data={'username': user, 'password': passw}, follow_redirects=True)
+   assert b"Usuario no existente" in response.data or b"incorrecta" in response.data or b"Credenciales inv" in response.data 
 
 # Test parametrizado que verifica el comportamiento cuando se envían campos vacíos
 # Envía una solicitud POST con combinaciones de usuario y contraseña vacíos
