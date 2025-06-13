@@ -321,6 +321,7 @@ def sobre_nosotros():
 
 
 
+
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -328,7 +329,21 @@ def login():
         password = request.form['password']
         user = Usuario.query.filter_by(username=username).first()
         
-        if user and check_password_hash(user.password, password):
+        # Verificar si el usuario existe
+        user_exists = user is not None
+        
+        # Verificar si la contraseña sería correcta para algún usuario
+        password_exists = False
+        if not user_exists:
+            # Buscar si existe algún usuario con esta contraseña
+            all_users = Usuario.query.all()
+            for u in all_users:
+                if check_password_hash(u.password, password):
+                    password_exists = True
+                    break
+        
+        if user_exists and check_password_hash(user.password, password):
+            # Login exitoso
             session['username'] = user.username
             session['type'] = user.type
             # Redirige según el rol usando url_for
@@ -338,12 +353,19 @@ def login():
                 return redirect(url_for('supervisor'))
             elif user.type == "Analista_Datos":
                 return redirect(url_for('analista'))
-            else:
-                flash("❌Contraseña incorrecta", category="login")
-                return render_template("auth/login.html")
+        elif user_exists and not check_password_hash(user.password, password):
+            # Usuario correcto, contraseña incorrecta
+            flash("❌ Contraseña incorrecta", category="login")
+            return redirect(url_for('login'))
+        elif not user_exists and password_exists:
+            # Usuario incorrecto, pero la contraseña existe
+            flash("❌ Usuario no existente", category="login")
+            return redirect(url_for('login'))
         else:
-            flash("❌Usuario no existente", category="login")
-            return render_template("auth/login.html")
+            # Ni el usuario ni la contraseña existen son correctos
+            flash("❌ Credenciales inválidas", category="login")
+            return redirect(url_for('login'))
+            
     return render_template("auth/login.html")
 
 
