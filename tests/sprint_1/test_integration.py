@@ -1,7 +1,6 @@
-from typing import Literal
 from flask.testing import FlaskClient
 import pytest
-from app import app as app_candidatos,Candidato,OfertaLaboral,db
+from app import app as app_candidatos,Candidato,OfertaLaboral,db, Postulacion
 
 # Fixture para eliminar candidatos específicos antes de ejecutar los tests
 @pytest.fixture(scope="function", autouse=True)
@@ -55,15 +54,18 @@ def test_valid_agregar_postulacion(client_Candidatos: FlaskClient,nombre,apellid
         'habilidades': habilidad1,       
         'habilidades2': habilidad2,      
         'idOfer': str(oferta_id),
-        'puntaje': 0
     })
     assert response.status_code in [200, 302]
 
     # Verificar que el postulante fue ingresado en la base de datos
     with app_candidatos.app_context():
-        candidato = Candidato.query.filter_by(id=email + str(oferta_id)).first()
+        id_candidato = email + str(oferta_id)
+        assert b"tu CV ha sido correctamente enviado" in response.data
+        candidato = Candidato.query.get(id_candidato)
         assert candidato is not None
-        #Se puede explayar mas
+
+        postulacion = Postulacion.query.filter_by(idCandidato=candidato.id, idOfer=oferta_id).first()
+        assert postulacion is not None
 
 #🟡A revisar🟡
 # Test parametrizado que verifica el intento de agregar postulantes duplicados
@@ -110,25 +112,27 @@ def test_postulantes_duplicados(client_Candidatos: FlaskClient,nombre,apellido,e
        assert len(candidatos) == 1
 
 #Test que verifica que no se pueda agregar un candidato a una oferta cerrada ❌Fallando❌
-# def test_cargar_candidatos_con_oferta_cerrada(client_Candidatos):
-#     client_Candidatos.get('/postulacionIT')
+def test_cargar_candidatos_con_oferta_cerrada(client_Candidatos):
+    client_Candidatos.get('/postulacionIT')
     
-#     id_oferta_cerrada = OfertaLaboral.query.filter_by(estado = 'Cerrada').first()
+    id_oferta_cerrada = OfertaLaboral.query.filter_by(estado = 'Cerrada').first()
     
-#     response = client_Candidatos.post('/postulacion', data = {
-#         'nombre': 'Carlos',
-#         'apellido': 'Rodriguez',
-#         'email': 'Carlitos@gmail.com', 
-#         'telefono': '1134123423',
-#         'ubicacion': 'Buenos Aires',
-#         'experiencia': 5, 
-#         'educacion': 'Universitario',  
-#         'tecnologias': 'Java',        
-#         'habilidades': 'Liderazgo',
-#         'idOfer': str(id_oferta_cerrada.idOfer),
-#         'puntaje': 0
-#     })
+    response = client_Candidatos.post('/postulacion', data = {
+        'nombre': 'Carlos',
+        'apellido': 'Rodriguez',
+        'email': 'Carlitos@gmail.com', 
+        'telefono': '1134123423',
+        'ubicacion': 'Buenos Aires',
+        'experiencia': 5, 
+        'educacion': 'Universitario',  
+        'tecnologias': 'Java',        
+        'habilidades': 'Liderazgo',
+        'idOfer': str(id_oferta_cerrada.idOfer),
+        'puntaje': 0
+    })
 
-#     assert response.status_code in [400,409, 500]
-#     candidato = Candidato.query.filter_by(id='Carlitos@gmail.com' + str(id_oferta_cerrada.idOfer)).first()
-#     assert candidato is None
+    assert response.status_code in [400,409, 500]
+    candidato = Candidato.query.filter_by(id='Carlitos@gmail.com' + str(id_oferta_cerrada.idOfer)).first()
+    assert candidato is None
+
+# def test_agregar_postulacion_con_limite_de_candidato_superado(client_Candidatos):

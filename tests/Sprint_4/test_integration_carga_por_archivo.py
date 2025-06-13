@@ -58,7 +58,7 @@ def test_extraccion_datos_clave_pdf(client):
     assert b"541164835671" in response.data
     assert b"Buenos Aires" in response.data
     assert b"lukotas100@gmail.com" in response.data
-    assert b"Java" in response.data or b"Adaptabilidad" in response.data or b"Universitario" in response.data
+    assert b"java" in response.data or b"adaptabilidad" in response.data or b"Universitario" in response.data
 
 #Falta implementar en la app
 #Test que valida la extracion correcta de datos de archivos docx
@@ -103,7 +103,7 @@ def test_validar_limite_de_tamaño(client):
 
         assert b"El archivo excede" in response.data and b"El archivo excede" in response.data
 
-#Test que valida que el sistema no acepte extensiones invalidas
+#Test que valida que el sistema no acepte extensiones invalidas 
 def test_validar_extension_invalida(client):
     with client.session_transaction() as sess:
         sess["username"] = "Fernando"

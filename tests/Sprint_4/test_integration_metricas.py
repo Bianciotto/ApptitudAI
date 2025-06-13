@@ -1,5 +1,5 @@
 import pytest
-from app import app as appLocal, db, OfertaLaboral, OfertaEducacion, OfertaTecnologia, OfertaHabilidad,OfertaHabilidad2,OfertaTecnologia2, Candidato, Educacion, Tecnologia, Tecnologia2, Habilidad2, Habilidad
+from app import app as appLocal, db, Postulacion, OfertaLaboral, OfertaEducacion, OfertaTecnologia, OfertaHabilidad,OfertaHabilidad2,OfertaTecnologia2, Candidato, Educacion, Tecnologia, Tecnologia2, Habilidad2, Habilidad
 from datetime import datetime
 
 @pytest.fixture(scope="module")
@@ -9,9 +9,11 @@ def setup_metricas():
             nombre="Oferta Test Métricas",
             fecha_cierre=datetime(2030, 1, 1),
             max_candidatos="10",
+            cant_candidatos = 0,
             remuneracion="1000",
             beneficio="Ninguno",
             estado="Activa",
+            modalidad='Local',
             usuario_responsable="Fernando"
         )
         db.session.add(oferta)
@@ -45,11 +47,21 @@ def setup_metricas():
                 idtec2=tec2.idtec2,
                 idhab=hab1.idhab,
                 idhab2=hab2.idhab2,
+            )
+
+            post_apto = Postulacion(
+                idCandidato=candidato.id,
                 idOfer=oferta.idOfer,
+                experiencia=candidato.experiencia,
+                idedu=candidato.idedu,
+                idtec=candidato.idtec,
+                idtec2=candidato.idtec2,
+                idhab=candidato.idhab,
+                idhab2=candidato.idhab2,
                 aptitud=True,
                 puntaje=90
             )
-            db.session.add(candidato)
+            db.session.add_all([candidato, post_apto])
         for i in range(2):
             candidato = Candidato(
                 id=f"noapto{i}@gmail.com{oferta.idOfer}",
@@ -64,16 +76,27 @@ def setup_metricas():
                 idtec2=tec2.idtec2,
                 idhab=hab1.idhab,
                 idhab2=hab2.idhab2,
+            )
+
+            post_no_apto = Postulacion(
+                idCandidato=candidato.id,
                 idOfer=oferta.idOfer,
+                experiencia=candidato.experiencia,
+                idedu=candidato.idedu,
+                idtec=candidato.idtec,
+                idtec2=candidato.idtec2,
+                idhab=candidato.idhab,
+                idhab2=candidato.idhab2,
                 aptitud=False,
                 puntaje=0
             )
-            db.session.add(candidato)
+            db.session.add_all([candidato, post_no_apto])
         db.session.commit()
 
         yield oferta.idOfer
 
-        Candidato.query.filter_by(idOfer=oferta.idOfer).delete()
+        Postulacion.query.filter_by(idOfer=oferta.idOfer).delete()
+        Candidato.query.filter(Candidato.id.like(f"%{oferta.idOfer}")).delete()
         OfertaEducacion.query.filter_by(idOfer=oferta.idOfer).delete()
         OfertaTecnologia.query.filter_by(idOfer=oferta.idOfer).delete()
         OfertaTecnologia2.query.filter_by(idOfer=oferta.idOfer).delete()
@@ -100,7 +123,7 @@ def test_metricas_candidatos_totales(client, setup_metricas):
     assert response.status_code == 200
     
     data = response.get_json()
-    assert data["total_candidatos"] == 5
+    assert data["total_postulantes"] == 5
     assert data["aptos"] == 3
     assert data["no_aptos"] == 2
 
@@ -153,10 +176,10 @@ def test_metricas_por_provincias(client, setup_metricas):
     
     data = response.get_json()
 
-    assert data["provincias_candidatos"]["Buenos Aires"] == 3
-    assert data["provincias_candidatos"]["Cordoba"] == 2
-    assert "Mendoza" not in data["provincias_candidatos"]
-    assert "Banana" not in data["provincias_candidatos"]
+    assert data["provincias_postulantes"]["Buenos Aires"] == 3
+    assert data["provincias_postulantes"]["Cordoba"] == 2
+    assert "Mendoza" not in data["provincias_postulantes"]
+    assert "Banana" not in data["provincias_postulantes"]
 
 def test_metricas_oferta_inexistente(client, setup_metricas):
     oferta_id = 43

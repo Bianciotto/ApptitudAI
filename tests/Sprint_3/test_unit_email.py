@@ -2,7 +2,7 @@ import pytest
 from flask import Flask
 from unittest.mock import patch, MagicMock
 from flask_sqlalchemy import SQLAlchemy
-from app import db, email, Candidato, obtener_correos_aptos, obtener_correos_noaptos, enviar_correos_automatica, OfertaLaboral
+from app import db, email, Candidato,Postulacion, obtener_correos_aptos, obtener_correos_noaptos, enviar_correos_automatica, OfertaLaboral
 from datetime import datetime
 
 @pytest.fixture
@@ -23,9 +23,11 @@ def setup_db(app):
             nombre="Desarrollador Backend SR",
             fecha_cierre=datetime.now(),
             max_candidatos=10,
+            cant_candidatos=0,
             remuneracion="100000",
             beneficio="Remoto",
             estado="Activa",
+            modalidad = 'Local',
             usuario_responsable="Fernando"
         )
         db.session.add(oferta)
@@ -44,7 +46,17 @@ def setup_db(app):
             idtec2=0,
             idhab=0,
             idhab2=0,
-            idOfer = oferta.idOfer,
+        )
+
+        post1 = Postulacion(
+            idCandidato=candidato1.id,
+            idOfer=oferta.idOfer,
+            experiencia=candidato1.experiencia,
+            idedu=candidato1.idedu,
+            idtec=candidato1.idtec,
+            idtec2=candidato1.idtec2,
+            idhab=candidato1.idhab,
+            idhab2=candidato1.idhab2,
             aptitud=True,
             puntaje=0
         )
@@ -61,8 +73,18 @@ def setup_db(app):
             idtec=1,
             idtec2=1,
             idhab=1,
-            idhab2=1,
-            idOfer = oferta.idOfer,
+            idhab2=1
+        )
+
+        post2 = Postulacion(
+            idCandidato=candidato2.id,
+            idOfer=oferta.idOfer,
+            experiencia=candidato2.experiencia,
+            idedu=candidato2.idedu,
+            idtec=candidato2.idtec,
+            idtec2=candidato2.idtec2,
+            idhab=candidato2.idhab,
+            idhab2=candidato2.idhab2,
             aptitud=False,
             puntaje=0
         )
@@ -79,13 +101,22 @@ def setup_db(app):
             idtec=1,
             idtec2=0,
             idhab=0,
-            idhab2=1,
-            idOfer = oferta.idOfer,
+            idhab2=1
+        )
+
+        post3 = Postulacion(
+            idCandidato=candidato3.id,
+            idOfer=oferta.idOfer,
+            experiencia=candidato3.experiencia,
+            idedu=candidato3.idedu,
+            idtec=candidato3.idtec,
+            idtec2=candidato3.idtec2,
+            idhab=candidato3.idhab,
+            idhab2=candidato3.idhab2,
             aptitud=False,
             puntaje=0
         )
-
-        db.session.add_all([candidato1, candidato2, candidato3])
+        db.session.add_all([candidato1, post1, candidato2, post2, candidato3, post3])
         db.session.commit()
 
         yield oferta.idOfer  

@@ -2,7 +2,7 @@ import pytest
 import joblib
 import pandas as pd
 from datetime import datetime
-from app import app as appLocal, db, OfertaLaboral, Candidato, Educacion, Tecnologia, Tecnologia2,Habilidad, Habilidad2,OfertaEducacion,OfertaHabilidad,OfertaHabilidad2,OfertaTecnologia,OfertaTecnologia2
+from app import app as appLocal, db, OfertaLaboral, Candidato, Educacion, Tecnologia, Tecnologia2,Habilidad, Habilidad2,OfertaEducacion,OfertaHabilidad,OfertaHabilidad2,OfertaTecnologia,OfertaTecnologia2, Postulacion
 
 @pytest.fixture
 def client():
@@ -57,11 +57,13 @@ def test_model_aplicado_al_cerrar_oferta(client):
     with client.application.app_context():
         oferta = OfertaLaboral(
             nombre="Oferta Test",
-            fecha_cierre=datetime(2030, 1, 1),
+            fecha_cierre=datetime(2025, 1, 1),
             max_candidatos=10,
+            cant_candidatos = 0,
             remuneracion="1000",
             beneficio="Home Office",
             estado="Activa",
+            modalidad= 'Local',
             usuario_responsable="Fernando"
         )
         db.session.add(oferta)
@@ -95,7 +97,6 @@ def test_model_aplicado_al_cerrar_oferta(client):
             idtec2=tec2.idtec2,
             idhab=hab1.idhab,
             idhab2=hab2.idhab2,
-            idOfer=oferta.idOfer
         )
 
         c_noapto = Candidato(
@@ -111,23 +112,49 @@ def test_model_aplicado_al_cerrar_oferta(client):
             idtec2=1,
             idhab=1,
             idhab2=2,
-            idOfer=oferta.idOfer
         )
 
         db.session.add_all([c_apto, c_noapto])
         db.session.commit()
+        
         oferta_id = oferta.idOfer 
+
+        post_apto = Postulacion(
+            idCandidato=c_apto.id,
+            idOfer=oferta_id,
+            experiencia=c_apto.experiencia,
+            idedu=c_apto.idedu,
+            idtec=c_apto.idtec,
+            idtec2=c_apto.idtec2,
+            idhab=c_apto.idhab,
+            idhab2=c_apto.idhab2,
+            puntaje=0
+        )
+     
+        post_noapto = Postulacion(
+            idCandidato=c_noapto.id,
+            idOfer=oferta_id,
+            experiencia=c_noapto.experiencia,
+            idedu=c_noapto.idedu,
+            idtec=c_noapto.idtec,
+            idtec2=c_noapto.idtec2,
+            idhab=c_noapto.idhab,
+            idhab2=c_noapto.idhab2,
+            puntaje=0
+        )
+
+        db.session.add_all([post_apto, post_noapto])
+        db.session.commit()
 
     response = client.post(f"/cerrar_oferta/{oferta_id}")
     assert response.status_code == 302
 
     with client.application.app_context():
-        c1 = Candidato.query.get(f"apto_test@gmail.com{oferta_id}")
-        c2 = Candidato.query.get(f"noapto_test@gmail.com{oferta_id}")
+        post1 = Postulacion.query.filter_by(idCandidato=f"apto_test@gmail.com{oferta_id}", idOfer=oferta_id).first()
+        post2 = Postulacion.query.filter_by(idCandidato=f"noapto_test@gmail.com{oferta_id}", idOfer=oferta_id).first()
 
-        assert c1.aptitud is True
-        assert c2.aptitud is False
-
+        assert post1.aptitud is True
+        assert post2.aptitud is False
         Candidato.query.filter(Candidato.id.in_([ f"apto_test@gmail.com{oferta_id}", f"noapto_test@gmail.com{oferta_id}"])).delete()
         OfertaLaboral.query.filter_by(idOfer=oferta_id).delete()
         db.session.commit()

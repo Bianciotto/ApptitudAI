@@ -22,9 +22,11 @@ def test_crear_oferta_exitosa(client):
             'nombre': 'Desarrollador Frontend SR',
             'fecha_cierre': '2026-06-01',
             'max_candidatos': '20',
+            'cant_candidatos':'0',
             'remuneracion': '100000',
             'beneficio': 'Home Office',
             'estado': 'Activa',
+            'modalidad': 'Local',
             'usuario_responsable': 'Fernando' 
         })
 
@@ -51,9 +53,11 @@ def test_asignacion_de_etiquetas_exitosa(client):
             'nombre': 'Desarrollador Backend SR',
             'fecha_cierre': '2025-06-01',
             'max_candidatos': '20',
+            'cant_candidatos':'0',
             'remuneracion': '100000',
             'beneficio': 'Home Office',
             'estado': 'Activa',
+            'modalidad': 'Local',
             'usuario_responsable': 'Fernando' 
         })
 
@@ -85,22 +89,26 @@ def test_oferta_duplicada(client):
             'nombre': 'Desarrollador Java JR',
             'fecha_cierre': '2025-06-01',
             'max_candidatos': '20',
+            'cant_candidatos':'0',
             'remuneracion': '100000',
             'beneficio': 'Home Office',
             'estado': 'Activa',
+            'modalidad': 'Local',
             'usuario_responsable': 'Fernando'  
         })
 
         assert response1.status_code in [200, 302]
 
         response2 = client.post('/crear_oferta', data={
-            'nombre': 'Desarrollador Java JR',  # Mismo nombre
+            'nombre': 'Desarrollador Java JR',
             'fecha_cierre': '2025-06-01',
             'max_candidatos': '20',
+            'cant_candidatos':'0',
             'remuneracion': '100000',
             'beneficio': 'Home Office',
             'estado': 'Activa',
-            'usuario_responsable': 'Fernando' 
+            'modalidad': 'Local',
+            'usuario_responsable': 'Fernando'
         })
 
         assert response2.status_code in [400, 409, 500]
@@ -127,15 +135,17 @@ def test_campos_vacios(client):
             'nombre': '',
             'fecha_cierre': '',
             'max_candidatos': '',
+            'cant_candidatos':'',
             'remuneracion': '',
             'beneficio': '',
             'estado': '',
+            'modalidad': '',
             'usuario_responsable': '' 
         })
 
         assert response.status_code in [400,422]
 
-#Test que verifica que se cierre la oferta laboral
+#Test que verifica que se cierre la oferta laboral(revisar)
 def test_validar_ciere_de_oferta(client):
     with appLocal.app_context():
         with client.session_transaction() as sess:
@@ -144,11 +154,13 @@ def test_validar_ciere_de_oferta(client):
         
         response = client.post('/crear_oferta', data ={
             'nombre': 'QA Tester Ssr',
-            'fecha_cierre': '2026-06-01',
-            'max_candidatos': '10',
+            'fecha_cierre': '2020-01-01',
+            'max_candidatos': '1',
+            'cant_candidatos':'1',
             'remuneracion': '300000',
             'beneficio': 'Gimnasio',
             'estado': 'Activa',
+            'modalidad': 'Local',
             'usuario_responsable': 'Fernando' 
         })
 
