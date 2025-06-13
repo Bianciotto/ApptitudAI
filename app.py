@@ -632,16 +632,39 @@ def crear_oferta():
             modalidad = request.form.get("modalidad")  
             fecha_cierre = datetime.strptime(fecha_cierre_str, "%Y-%m-%d")
 
-            #  Verificar si el nombre ya existe
+            # Validaciones
+            if not (nombre and 4 < len(nombre) < 51):
+                flash("❌ El nombre debe tener entre 5 y 50 caracteres.", "error")
+                return redirect("/crear_oferta")
+            
+            # Verificar si el nombre ya existe
             if OfertaLaboral.query.filter_by(nombre=nombre).first():
                 flash(f"Error: La oferta '{nombre}' ya existe. Elige un nombre diferente.")
+                return redirect("/crear_oferta")
+
+            if not (4 < max_candidatos < 1001):
+                flash("❌ La cantidad máxima de candidatos debe estar entre 5 y 1000.", "error")
+                return redirect("/crear_oferta")
+
+            try:
+                remuneracion_int = int(request.form.get("remuneracion"))
+            except ValueError:
+                flash("❌ La remuneración debe ser un número entero válido.", "error")
+                return redirect("/crear_oferta")
+
+            if not (200 < remuneracion_int < 90000):
+                flash("❌ La remuneración debe estar entre 201 y 89999.", "error")
+                return redirect("/crear_oferta")
+
+            if not (beneficio and 2 < len(beneficio) < 61):
+                flash("❌ El campo beneficio debe tener entre 3 y 60 caracteres.", "error")
                 return redirect("/crear_oferta")
 
             #  Validar modalidad antes de crear la oferta
             if modalidad not in ["Local", "Mixta", "Externa"]:
                 flash("❌ Modalidad inválida. Debe ser 'Local', 'Mixta' o 'Externa'.", "error")
                 return redirect("/crear_oferta")
-
+           
             nueva_oferta = OfertaLaboral(
                 nombre=nombre,
                 fecha_cierre=fecha_cierre,
