@@ -728,7 +728,7 @@ def crear_oferta():
 
 
             db.session.commit()  
-            flash(f"Oferta '{nombre}' creada con éxito 🎉 con estado '{nueva_oferta.estado}', modalidad '{nueva_oferta.modalidad}' y etiquetas asignadas", "success")
+            flash(f"✔️Oferta '{nombre}' creada con éxito, con estado '{nueva_oferta.estado}', modalidad '{nueva_oferta.modalidad}' y etiquetas asignadas", "success")
             return redirect("/crear_oferta")
         
         except Exception as e:
