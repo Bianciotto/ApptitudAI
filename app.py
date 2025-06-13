@@ -760,8 +760,10 @@ def ver_ofertas():
         "Estado": o.estado,
         "Responsable": o.usuario_responsable,
         "Acción": f'<form style="display: inline-block; width: 110px; height: 35px; margin: 0 auto;" method="POST" action="{url_for("cerrar_oferta", idOfer=o.idOfer)}">'
+                f'<input type="hidden" name="forzar" value="1">'
                 f'<button style="font-size: 12px; margin: 0 !important; padding: 0 !important; width: 100px; height: 30px;" type="submit">Cerrar oferta</button></form>' 
                 if o.fecha_cierre > datetime.now() else "Oferta cerrada"
+
     } for o in ofertas])
 
     # Convertir el DataFrame a tabla HTML, asegurando que los botones sean renderizados
@@ -780,8 +782,11 @@ def cerrar_oferta(idOfer):
         flash("La oferta ya está cerrada o no existe.", "error")
         return redirect(url_for("ver_ofertas"))
 
-    # 🧠 Verificar si debe cerrarse por fecha o por cantidad
-    if oferta.fecha_cierre <= datetime.now() or oferta.cant_candidatos >= oferta.max_candidatos:
+    forzar = request.form.get("forzar")
+
+    print("Form data:", request.form)
+    print("Valor de forzar:", request.form.get("forzar"))
+    if forzar == "1" or oferta.fecha_cierre <= datetime.now() or oferta.cant_candidatos >= oferta.max_candidatos:
         oferta.fecha_cierre = datetime.now()
         oferta.estado = "Cerrada"
 
@@ -795,6 +800,7 @@ def cerrar_oferta(idOfer):
         flash("La oferta aún no puede cerrarse automáticamente.", "warning")
 
     return redirect(url_for("ver_ofertas"))
+
 
 @app.route("/limpiar_ofertas", methods=["POST"])
 @login_required(roles=["Admin_RRHH"])
