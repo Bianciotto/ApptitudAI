@@ -19,8 +19,11 @@
 
     <form method="POST" enctype="multipart/form-data">
         <h2>Subir CV en PDF</h2>
-        <input type="file" name="cv_pdf" accept=".pdf" required>
+        <input type="file" id="cv_pdf" name="cv_pdf" accept=".pdf" required>
+        <p id="nombre_archivo" style="margin: 10px 0; font-weight: bold;"></p>
+        
         <button type="submit">Extraer datos del CV</button>
+        <button type="button" onclick="limpiarArchivo()">Eliminar archivo</button>
         {% with messages = get_flashed_messages(category_filter=["pdf"]) %}
         {% if messages %}
         <div class="flash-messages">
@@ -139,6 +142,20 @@
 
     <script src="{{ url_for('static', filename='js/etiquetasDistintas.js') }}"></script>
     {% include "layout/footer.html" %}
+    <script>
+    const inputArchivo = document.getElementById('cv_pdf');
+    const nombreArchivo = document.getElementById('nombre_archivo');
+
+    inputArchivo.addEventListener('change', function () {
+        const archivo = this.files[0];
+        nombreArchivo.textContent = archivo ? `Archivo seleccionado: ${archivo.name}` : "";
+    });
+
+    function limpiarArchivo() {
+        inputArchivo.value = "";
+        nombreArchivo.textContent = "";
+    }
+    </script>
 </body>
 
 </html>
