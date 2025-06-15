@@ -1800,4 +1800,4 @@ def obtener_metricas(oferta_id):
 
 if __name__ == "__main__":
     threading.Timer(1.5, abrir_navegador).start() 
-    app.run(debug=False, host="127.0.0.1", port=5000)
+    app.run(debug=True, host="127.0.0.1", port=5000)
