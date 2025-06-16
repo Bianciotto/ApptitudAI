@@ -15,13 +15,135 @@
 <body>
   {% include "layout/header_general.html" %}
   {% include "layout/menu.html" %}
-    <div class="ring">
-    <i style="--clr:#1900ff;"></i>
-    <i style="--clr:#ea00ff;"></i>
-    <i style="--clr:#7644ff;"></i>
-    <h1 class="titulo-animado">¡Bienvenido a ApptitudAI!</h1>
-    <p class="descripcion-ia">El primer paso para encontrar el mejor talento comienza aquí. <br>¡Sigamos eligiendo con inteligencia!</p>
+    
+    <div class="particles">
+        <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
+        <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
+        <div class="particle" style="left: 40%; animation-delay: 1s;"></div>
+        <div class="particle" style="left: 50%; animation-delay: 3s;"></div>
+        <div class="particle" style="left: 60%; animation-delay: 5s;"></div>
+        <div class="particle" style="left: 70%; animation-delay: 2s;"></div>
+        <div class="particle" style="left: 80%; animation-delay: 4s;"></div>
+        <div class="particle" style="left: 90%; animation-delay: 1s;"></div>
     </div>
+    <div class="prediccion-panel">
+      <!-- Contenedor de gauges con glow -->
+      <div class="gauges-container">
+        <div class="gauges-section" style="margin-bottom: 40px;">
+            <div class="gauge-card">
+                <canvas id="gauge1" width="160" height="80"></canvas>
+                <div class="gauge-label">Ofertas activas</div>
+            </div>
+            <div class="gauge-card">
+                <canvas id="gauge2" width="160" height="80"></canvas>
+                <div class="gauge-label">Candidatos postulados</div>
+            </div>
+            <div class="gauge-card">
+                <canvas id="gauge3" width="160" height="80"></canvas>
+                <div class="gauge-label">Ofertas cerradas</div>
+            </div>
+        </div>
+      </div>
+
+      <!-- Contenedor de ofertas activas -->
+      <div class="ofertas-section">
+        <div class="ofertas-title">Ofertas Activas</div>
+          <div class="ofertas-grid" id="ofertas-activas-grid">
+              <!-- Tarjetas de ofertas activas y crear oferta -->
+          </div>
+      </div>
+
+      <!-- Contenedor de ofertas cerradas -->
+      <div class="ofertas-section">
+        <div class="ofertas-title">Ofertas Cerradas</div>
+          <div class="ofertas-grid" id="ofertas-cerradas-grid">
+            {% for oferta in ofertas_cerradas %}
+            <div class="oferta-card oferta-cerrada">
+              <h3>{{ oferta.nombre }}</h3>
+              <p>{{ oferta.beneficio or 'Sin descripción' }}</p>
+              <p class="oferta-fecha">Cerrada hace {{ (now - oferta.fecha_cierre).days }} días</p>
+              <form method="POST" action="{{ url_for('eliminar_oferta', idOfer=oferta.idOfer) }}" style="width:100%;text-align:right;">
+                <button type="submit" class="btn-eliminar-oferta{% if (now - oferta.fecha_cierre).days > 1 %} cerrada-mas-1dia{% endif %}">Eliminar</button>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Datos de ejemplo para los gauges
+        const gaugeData = [5, 23, 2];
+        const gaugeMax = [10, 50, 10];
+        const gaugeColors = [
+            ['#4caf50', '#e0e0e0'],
+            ['#2196f3', '#e0e0e0'],
+            ['#f44336', '#e0e0e0']
+        ];
+        function createGauge(ctx, value, max, colors) {
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [value, max - value],
+                        backgroundColor: colors,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    rotation: -90,
+                    circumference: 180,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false },
+                        title: { display: false },
+                    },
+                    responsive: false
+                }
+            });
+        }
+        createGauge(document.getElementById('gauge1'), gaugeData[0], gaugeMax[0], gaugeColors[0]);
+        createGauge(document.getElementById('gauge2'), gaugeData[1], gaugeMax[1], gaugeColors[1]);
+        createGauge(document.getElementById('gauge3'), gaugeData[2], gaugeMax[2], gaugeColors[2]);
+    </script>
+    <script>
+        // Datos de ejemplo para las ofertas activas
+        const ofertasActivas = [
+            { id: 1, titulo: 'Desarrollador Python', ubicacion: 'Remoto', fecha: '2025-06-15' },
+            { id: 2, titulo: 'Analista de Datos', ubicacion: 'Buenos Aires', fecha: '2025-06-14' },
+            { id: 3, titulo: 'QA Tester', ubicacion: 'Córdoba', fecha: '2025-06-13' }
+        ];
+        function renderOfertas() {
+            const grid = document.getElementById('ofertas-activas-grid');
+            grid.innerHTML = '';
+            // Tarjeta para crear nueva oferta
+            const addCard = document.createElement('div');
+            addCard.className = 'oferta-card add';
+            addCard.innerHTML = '<span>+</span><div style="font-size: 14px;">Crear Oferta</div>';
+            addCard.onclick = () => { window.location.href = '/crear_oferta'; };
+            grid.appendChild(addCard);
+            // Ofertas activas
+            ofertasActivas.forEach(oferta => {
+                const card = document.createElement('div');
+                card.className = 'oferta-card';
+                card.innerHTML = `<h3>${oferta.titulo}</h3><p>${oferta.ubicacion}</p><div class='oferta-fecha'>Desde: ${oferta.fecha}</div>`;
+                card.onclick = () => { window.open(`/detalle_oferta?id=${oferta.id}`, '_blank'); };
+                grid.appendChild(card);
+            });
+        }
+        renderOfertas();
+    </script>
+    <script>
+        // Ejemplo: agregar clase roja si la oferta lleva más de 1 día cerrada (esto sería dinámico en backend)
+        document.querySelectorAll('.oferta-card.oferta-cerrada').forEach(card => {
+          const fecha = card.querySelector('.oferta-fecha');
+          if (fecha && fecha.textContent.includes('2 días')) {
+            card.querySelector('.btn-eliminar-oferta').classList.add('cerrada-mas-1dia');
+          }
+        });
+    </script>
   {% include "layout/footer.html" %}
 </body>
 

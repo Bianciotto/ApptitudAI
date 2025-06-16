@@ -895,9 +895,10 @@ def estadisticas():
 @login_required(roles=["Admin_RRHH"])
 def predecir():
     plt.close("all")
-
-    # 📌 Cargar ofertas activas y pasarlas a la plantilla
     ofertas_activas = OfertaLaboral.query.filter_by(estado="Activa").all()
+    ofertas_cerradas = OfertaLaboral.query.filter_by(estado="Cerrada").all()
+    now = datetime.now()
+    total_candidatos = Candidato.query.count()
 
     if request.method == "POST":
         # 📌 Verifica que el archivo CSV esté en la solicitud
@@ -974,7 +975,7 @@ def predecir():
         except Exception as e:
             return f"Ocurrió un error al procesar el archivo: {e}"
 
-    return render_template("predecir.html", ofertas_activas=ofertas_activas)
+    return render_template("predecir.html", ofertas_activas=ofertas_activas, ofertas_cerradas=ofertas_cerradas, now=now, total_candidatos=total_candidatos)
 
 
 
