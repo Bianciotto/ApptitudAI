@@ -1472,7 +1472,7 @@ def cargarCV():
         idOfer = request.form.get("idOfer")
 
         if not idOfer:
-            flash("Debes seleccionar una oferta laboral.")
+            flash("Debes seleccionar una oferta laboral.", category="form")
             return redirect("/cargarCV")
 
         try:
@@ -1652,8 +1652,7 @@ def asignar_valores(idOfer):
     oferta = OfertaLaboral.query.get(idOfer)
     if not oferta:
         flash("Oferta no encontrada", "error")
-        return redirect(url_for("dashboard"))
-
+        return redirect(url_for("ver_ofertas"))
     # 📌 Educación
     educacion_id = request.form.get("educacion_id")
     valor_educacion = request.form.get("valor_educacion")
@@ -1800,4 +1799,4 @@ def obtener_metricas(oferta_id):
 
 if __name__ == "__main__":
     threading.Timer(1.5, abrir_navegador).start() 
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    app.run(debug=False, host="127.0.0.1", port=5000)
