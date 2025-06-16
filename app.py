@@ -833,7 +833,7 @@ def limpiar_ofertas_expiradas():
 @login_required(roles=["Admin_RRHH"])
 def estadisticas():
     if request.method == "POST":
-        return render_template("predecir.html")
+        return render_template("index.html")
     # Cargar modelo y encoders
     modelo = joblib.load(get_path("modelo_candidatos.pkl"))
     encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
@@ -975,7 +975,7 @@ def predecir():
         except Exception as e:
             return f"Ocurrió un error al procesar el archivo: {e}"
 
-    return render_template("predecir.html", ofertas_activas=ofertas_activas, ofertas_cerradas=ofertas_cerradas, now=now, total_candidatos=total_candidatos)
+    return render_template("index.html", ofertas_activas=ofertas_activas, ofertas_cerradas=ofertas_cerradas, now=now, total_candidatos=total_candidatos)
 
 
 
@@ -1824,9 +1824,16 @@ def obtener_metricas(oferta_id):
 
         "provincias_postulantes": provincias_postulantes
     })
-
+@app.route('/eliminar_oferta/<int:idOfer>', methods=['POST'])
+@login_required(roles=["Admin_RRHH"])
+def eliminar_oferta(idOfer):
+    oferta = OfertaLaboral.query.get_or_404(idOfer)
+    db.session.delete(oferta)
+    db.session.commit()
+    flash("Oferta eliminada correctamente.", "success")
+    return redirect(url_for('predecir'))
 
 
 if __name__ == "__main__":
     threading.Timer(1.5, abrir_navegador).start() 
-    app.run(debug=False, host="127.0.0.1", port=5000)
+    app.run(debug=True, host="127.0.0.1", port=5000)
