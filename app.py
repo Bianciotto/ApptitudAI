@@ -1391,19 +1391,48 @@ def extraer_info_cv_pdf(file_storage):
             info["ubicacion"] = prov
             break
 
-    # Años de experiencia
-    exp_match = re.search(r"(\d+)\s+(años|año)\s+de\s+experiencia", texto.lower())
-    if not exp_match:
-        exp_match = re.search(r"experiencia\s+laboral.*?(\d+)\s+(años|año)", texto.lower())
-    if not exp_match:
-        exp_match = re.search(r"(más de|alrededor de)\s+(\d+)\s+(años|año)", texto.lower())
+    # Estimar experiencia laboral a partir de rangos de años luego de la palabra "experiencia"
+    texto_lower = texto.lower()
+    indice_exp = texto_lower.find("experiencia")
 
-    if exp_match:
-        anios = exp_match.group(1) if exp_match.lastindex == 2 else exp_match.group(2)
-        try:
-            info["experiencia"] = int(anios)
-        except ValueError:
-            pass
+    if indice_exp != -1:
+        texto_despues_exp = texto_lower[indice_exp:]
+
+        # Cortar si se menciona algo educativo
+        palabras_corte = ["universidad", "licenciatura", "ingeniería", "educación", "estudios", "colegio", "título", "egresado"]
+        for palabra in palabras_corte:
+            corte_idx = texto_despues_exp.find(palabra)
+            if corte_idx != -1:
+                texto_despues_exp = texto_despues_exp[:corte_idx]
+                break
+
+        total_experiencia = 0
+        anio_actual = 2025
+
+        # Rango explícito (ej: "2015 - 2018", "2012 a 2014")
+        patron_rango = r"(20(0[9]|1[0-9]|2[0-5]))\s*(?:-|–|—|a|hasta)\s*(20(0[9]|1[0-9]|2[0-5]))"
+        for match in re.findall(patron_rango, texto_despues_exp):
+            try:
+                inicio = int(match[0])
+                fin = int(match[2])
+                if inicio < fin:
+                    total_experiencia += (fin - inicio)
+            except ValueError:
+                continue
+
+        # Rango abierto (ej: "2018 a actualidad", "2016 hasta hoy")
+        patron_abierto = r"(20(0[9]|1[0-9]|2[0-5]))\s*(?:-|–|—|a|hasta)\s*(actualidad|presente|hoy|actual)"
+        for match in re.findall(patron_abierto, texto_despues_exp):
+            try:
+                inicio = int(match[0])
+                fin = anio_actual
+                if inicio < fin:
+                    total_experiencia += (fin - inicio)
+            except ValueError:
+                continue
+
+        if total_experiencia >= 1:
+            info["experiencia"] = total_experiencia
 
     return info
 
