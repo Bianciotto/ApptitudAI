@@ -1051,6 +1051,13 @@ def postulantes():
     if filtro == "apto":
         dataSet = dataSet[dataSet["Apto"] == "Apto"]
 
+    dataSet = dataSet.rename(columns={    
+    "Tecnologías": "Tecnología Principal",
+    "Habilidades": "Habilidad 1",
+    "Tecnologías2": "Tecnología Secundaria",
+    "Habilidades2": "Habilidad 2"
+})
+
     tabla_html = dataSet.to_html(classes="table table-striped", index=False)
     return render_template("postulantes.html", tabla=tabla_html, ofertas=OfertaLaboral.query.all(), idOfer=idOfer)
 

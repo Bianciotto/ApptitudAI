@@ -203,6 +203,9 @@ form p {
     /* CENTRA la opción seleccionada (más efectivo en Firefox y Edge) */
     box-shadow: 0 0 10px rgba(56, 21, 184, 0.4);
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    width: fit-content;
+    min-width: 200px; /* opcional */
+    max-width: 100%;   /* para que no desborde */
 }
 
 .custom-select:hover,

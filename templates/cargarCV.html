@@ -86,8 +86,7 @@
         <select name="educacion" id="educacion" required>
             <option disabled selected value="">-- Selecciona nivel de educación más alto alcanzado --</option>
             {% for opcion in opciones_educacion %}
-            <option value="{{ opcion }}" {% if precargado and precargado.educacion==opcion %}selected{% endif %}>{{
-                opcion }}</option>
+            <option value="{{ opcion }}" {% if precargado and precargado.educacion==opcion %}selected{% endif %}>{{ opcion|capitalize }}</option>
             {% endfor %}
         </select>
 
@@ -95,8 +94,7 @@
         <select name="tecnologias" id="tecnologias" required>
             <option disabled selected value="">-- Selecciona una tecnología --</option>
             {% for opcion in opciones_tecnologias %}
-            <option value="{{ opcion }}" {% if precargado and precargado.tecnologias==opcion %}selected{% endif %}>{{
-                opcion }}</option>
+            <option value="{{ opcion }}" {% if precargado and precargado.tecnologias==opcion %}selected{% endif %}>{{ opcion|capitalize }}</option>
             {% endfor %}
         </select>
 
@@ -104,8 +102,7 @@
         <select name="tecnologias2" id="tecnologias2" required>
             <option disabled selected value="">-- Selecciona otra tecnología --</option>
             {% for opcion in opciones_tecnologias2 %}
-            <option value="{{ opcion }}" {% if precargado and precargado.tecnologias2==opcion %}selected{% endif %}>{{
-                opcion }}</option>
+            <option value="{{ opcion }}" {% if precargado and precargado.tecnologias2==opcion %}selected{% endif %}>{{ opcion|capitalize }}</option>
             {% endfor %}
         </select>
 
@@ -113,8 +110,7 @@
         <select name="habilidades" id="habilidades" required>
             <option disabled selected value="">-- Selecciona una habilidad --</option>
             {% for opcion in opciones_habilidades %}
-            <option value="{{ opcion }}" {% if precargado and precargado.habilidades==opcion %}selected{% endif %}>{{
-                opcion }}</option>
+            <option value="{{ opcion }}" {% if precargado and precargado.habilidades==opcion %}selected{% endif %}>{{ opcion|capitalize }}</option>
             {% endfor %}
         </select>
 
@@ -122,8 +118,7 @@
         <select name="habilidades2" id="habilidades2" required>
             <option disabled selected value="">-- Selecciona otra habilidad --</option>
             {% for opcion in opciones_habilidades2 %}
-            <option value="{{ opcion }}" {% if precargado and precargado.habilidades2==opcion %}selected{% endif %}>{{
-                opcion }}</option>
+            <option value="{{ opcion }}" {% if precargado and precargado.habilidades2==opcion %}selected{% endif %}>{{ opcion|capitalize }}</option>
             {% endfor %}
         </select>
 
