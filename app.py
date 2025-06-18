@@ -1549,6 +1549,11 @@ def cargarCV():
                 )
                 db.session.add(candidato)
 
+            # Validación de postulación duplicada
+            if Postulacion.query.filter_by(idCandidato=candidato.id, idOfer=idOfer).first():
+                flash("❌Este candidato ya estaba postulado a la oferta seleccionada.", category="form")
+                return redirect("/cargarCV")
+
             nueva_postulacion = Postulacion(
                 idCandidato=candidato.id,
                 idOfer=idOfer,
