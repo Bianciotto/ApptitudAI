@@ -1665,7 +1665,14 @@ def mostrar_etiquetas(idOfer=None):
 @login_required(roles=["Admin_RRHH"])
 def actualizar_importancia(tipo, id):
     data = request.get_json()
-    importancia = int(data["importancia"])
+    try:
+        importancia = int(data["importancia"])
+    except (KeyError, ValueError):
+        return jsonify({"error": "Valor de importancia inválido"}), 400
+
+    # Validar rango
+    if importancia < 0 or importancia > 3:
+        return jsonify({"error": "La importancia debe estar entre 0 y 3"}), 400
 
     modelos = {
         "educacion": OfertaEducacion,
@@ -1687,6 +1694,14 @@ def actualizar_importancia(tipo, id):
     db.session.commit()
     return jsonify({"ok": True})
 
+def validar_importancia(valor_str):
+    try:
+        valor = int(valor_str)
+        if 0 <= valor <= 3:
+            return valor
+    except (TypeError, ValueError):
+        pass
+    return None
 
 @app.route("/asignar_valores/<int:idOfer>", methods=["POST"])
 @login_required(roles=["Admin_RRHH"])
@@ -1697,40 +1712,40 @@ def asignar_valores(idOfer):
         return redirect(url_for("ver_ofertas"))
     # 📌 Educación
     educacion_id = request.form.get("educacion_id")
-    valor_educacion = request.form.get("valor_educacion")
-    if valor_educacion:
+    valor_educacion = validar_importancia(request.form.get("valor_educacion"))
+    if valor_educacion is not None:
         edu_rel = OfertaEducacion.query.filter_by(idOfer=idOfer, idEdu=educacion_id).first()
         if edu_rel:
             edu_rel.importancia = int(valor_educacion)
 
     # 📌 Tecnología
     tecnologia_id = request.form.get("tecnologia_id")
-    valor_tecnologia = request.form.get("valor_tecnologia")
-    if valor_tecnologia:
+    valor_tecnologia = validar_importancia(request.form.get("valor_tecnologia"))
+    if valor_tecnologia is not None:
         tec_rel = OfertaTecnologia.query.filter_by(idOfer=idOfer, idTec=tecnologia_id).first()
         if tec_rel:
             tec_rel.importancia = int(valor_tecnologia)
 
     # 📌 Tecnología secundaria
     tecnologia2_id = request.form.get("tecnologia2_id")
-    valor_tecnologia2 = request.form.get("valor_tecnologia2")
-    if valor_tecnologia2:
+    valor_tecnologia2 = validar_importancia(request.form.get("valor_tecnologia2"))
+    if valor_tecnologia2 is not None:
         tec2_rel = OfertaTecnologia2.query.filter_by(idOfer=idOfer, idTec2=tecnologia2_id).first()
         if tec2_rel:
             tec2_rel.importancia = int(valor_tecnologia2)
 
     # 📌 Habilidad
     habilidad_id = request.form.get("habilidad_id")
-    valor_habilidad = request.form.get("valor_habilidad")
-    if valor_habilidad:
+    valor_habilidad = validar_importancia(request.form.get("valor_habilidad"))
+    if valor_habilidad is not None:
         hab_rel = OfertaHabilidad.query.filter_by(idOfer=idOfer, idHab=habilidad_id).first()
         if hab_rel:
             hab_rel.importancia = int(valor_habilidad)
 
     # 📌 Habilidad secundaria
     habilidad2_id = request.form.get("habilidad2_id")
-    valor_habilidad2 = request.form.get("valor_habilidad2")
-    if valor_habilidad2:
+    valor_habilidad2 = validar_importancia(request.form.get("valor_habilidad2"))
+    if valor_habilidad2 is not None:
         hab2_rel = OfertaHabilidad2.query.filter_by(idOfer=idOfer, idHab2=habilidad2_id).first()
         if hab2_rel:
             hab2_rel.importancia = int(valor_habilidad2)

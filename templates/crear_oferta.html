@@ -23,23 +23,23 @@
     <span></span>
 
     <label for="nombre">Nombre de la oferta:</label>
-    <input type="text" name="nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' 0-9]{4,51}" required>
+    <input type="text" name="nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' 0-9]+" minlength="5" maxlength="50" title="Debe tener entre 5 y 50 caracteres. Solo letras, números y apóstrofes." required>
 
     <label for="fecha_cierre">Fecha de cierre:</label>
     <input type="date" name="fecha_cierre" required>
 
     <label for="max_candidatos">Cantidad máxima de candidatos:</label>
-    <input type="number" name="max_candidatos" min="4" max="1000" required>
+    <input type="number" name="max_candidatos" min="5" max="1000" title="Debe ser un número entre 5 y 1000" required>
 
     <label for="remuneracion">Remuneración ($USD):</label>
-    <input type="number" name="remuneracion" placeholder="Ej: 4000" min="200" max="90000" required>
+    <input type="number" name="remuneracion" placeholder="Ej: 4000" min="200" max="90000" title="Debe ser como mínimo 200 y como máximo 90000 USD" required>
 
     <label for="beneficio">Beneficio:</label>
-    <input type="text" name="beneficio" placeholder="Ej: Home office" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' 0-9]{3,60}"
-      required>
+    <input type="text" name="beneficio" placeholder="Ej: Home office" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' 0-9]+" minlength="3" maxlength="60" title="Debe tener entre 3 y 60 caracteres, solo letras, números y apóstrofes."required>
 
     <label for="modalidad">Modalidad de la oferta:</label>
     <select name="modalidad" required>
+      <option value="" disabled selected>-- Selecciona una opción --</option>
       <option value="Local">Local</option>
       <option value="Mixta">Mixta</option>
       <option value="Externa">Externa</option>
