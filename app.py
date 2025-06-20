@@ -830,7 +830,7 @@ def limpiar_ofertas_expiradas():
 
 # Página de estadísticas
 @app.route("/estadisticas", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH"])
+@login_required(roles=["Admin_RRHH", "Supervisor"])
 def estadisticas():
     if request.method == "POST":
         return render_template("index.html")
@@ -1446,7 +1446,7 @@ def extraer_info_cv_pdf(file_storage):
 
 
 @app.route("/cargarCV", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH"])
+@login_required(roles=["Admin_RRHH", "Supervisor"])
 def cargarCV():
     opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
     opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]

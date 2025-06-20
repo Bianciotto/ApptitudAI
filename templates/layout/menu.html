@@ -50,8 +50,10 @@
                 <span class="arrow">&#9662;</span>
             </summary>
             <div class="submenu">
-                <a href="{{ url_for('estadisticas') }}"><i class="fas fa-sliders-h"></i> Estadisticas</a>
+                {% if session.get('type') == 'Admin_RRHH' %}
                 <a href="{{ url_for('metricas', oferta_id=idOfer) }}"><i class="fas fa-list"></i> Ver métricas</a>
+                {% endif %}
+                <a href="{{ url_for('estadisticas') }}"><i class="fas fa-sliders-h"></i> Estadisticas</a>
 
             </div>
 
