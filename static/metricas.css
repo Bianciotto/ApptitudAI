@@ -826,3 +826,42 @@ details[open] .arrow {
         color: #d1d1d1;
     }
 }
+
+/* Carrusel de gráficos */
+.carousel-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: 30px auto 0 auto;
+    position: relative;
+    max-width: 600px;
+}
+.carousel-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 320px;
+}
+.carousel-chart {
+    display: none;
+    width: 100% !important;
+    max-width: 500px;
+    height: auto !important;
+    aspect-ratio: 1/1;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+.carousel-chart.active {
+    display: block !important;
+}
+@media (max-width: 600px) {
+    .carousel-container {
+        max-width: 98vw;
+    }
+    .carousel-chart {
+        max-width: 98vw;
+    }
+}
