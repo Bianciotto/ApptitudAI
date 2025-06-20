@@ -385,9 +385,9 @@ def admin_rrhh():
 
 @app.route('/supervisor')
 def supervisor():
-    if 'username' in session and session.get('type') == "Supervisor":
-        return f"Bienvenido {session.get('username')} al panel de Supervisor."
-    return redirect('/login')
+    #if 'username' in session and session.get('type') == "Supervisor":
+        #return f"Bienvenido {session.get('username')} al panel de Supervisor."
+    return redirect('/predecir')
 
 
 @app.route('/analista')
@@ -619,7 +619,7 @@ def postulacion():
     )
 
 @app.route('/crear_oferta', methods=['GET', 'POST'])
-@login_required(roles=["Admin_RRHH"])
+@login_required(roles=["Admin_RRHH", "Supervisor"])
 def crear_oferta():
     if request.method == "POST":
         try:
@@ -740,7 +740,7 @@ def crear_oferta():
 
 
 @app.route("/ver_ofertas")
-@login_required(roles=["Admin_RRHH"])
+@login_required(roles=["Admin_RRHH", "Supervisor"])
 def ver_ofertas():
     ofertas = OfertaLaboral.query.order_by(OfertaLaboral.fecha_cierre.desc()).all()
 
@@ -892,7 +892,7 @@ def estadisticas():
 
 # Ruta para predecir con un archivo CSV
 @app.route("/predecir", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH"])
+@login_required(roles=["Admin_RRHH", "Supervisor"])
 def predecir():
     plt.close("all")
     ofertas_activas = OfertaLaboral.query.filter_by(estado="Activa").all()
@@ -981,7 +981,7 @@ def predecir():
 
 
 @app.route("/postulantes")
-@login_required(roles=["Admin_RRHH"])
+@login_required(roles=["Admin_RRHH", "Supervisor"])
 def postulantes():
     idOfer = request.args.get("idOfer")
     filtro = request.args.get("filtro")
@@ -1608,7 +1608,7 @@ def cargarCV():
 
 
 @app.route("/etiquetas", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH"])
+@login_required(roles=["Admin_RRHH", "Supervisor"])
 def mostrar_etiquetas(idOfer=None):
     ofertas = OfertaLaboral.query.all()
     ofertas_activas = OfertaLaboral.query.filter_by(estado="Activa").all()
@@ -1704,7 +1704,7 @@ def validar_importancia(valor_str):
     return None
 
 @app.route("/asignar_valores/<int:idOfer>", methods=["POST"])
-@login_required(roles=["Admin_RRHH"])
+@login_required(roles=["Admin_RRHH", "Supervisor"])
 def asignar_valores(idOfer):
     oferta = OfertaLaboral.query.get(idOfer)
     if not oferta:
