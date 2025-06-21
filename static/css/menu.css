@@ -43,6 +43,13 @@
     
 }
 }
+
+@media screen and (max-width: 450px) {
+    
+    #menu-toggle:checked ~ header .user-menu-wrapper {
+    display: none !important;
+}
+}
 /* Posición cuando el menú está cerrado */
 
 
