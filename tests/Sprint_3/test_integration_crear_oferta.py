@@ -1,6 +1,7 @@
 import pytest
 from flask_sqlalchemy import SQLAlchemy
 from app import app as appLocal, OfertaLaboral,OfertaEducacion,OfertaHabilidad,OfertaTecnologia, db, cerrar_oferta
+from datetime import datetime
 
 @pytest.fixture
 def client():
@@ -23,7 +24,7 @@ def test_crear_oferta_exitosa(client):
             'fecha_cierre': '2026-06-01',
             'max_candidatos': '20',
             'cant_candidatos':'0',
-            'remuneracion': '100000',
+            'remuneracion': '50000',
             'beneficio': 'Home Office',
             'estado': 'Activa',
             'modalidad': 'Local',
@@ -54,7 +55,7 @@ def test_asignacion_de_etiquetas_exitosa(client):
             'fecha_cierre': '2025-06-01',
             'max_candidatos': '20',
             'cant_candidatos':'0',
-            'remuneracion': '100000',
+            'remuneracion': '50000',
             'beneficio': 'Home Office',
             'estado': 'Activa',
             'modalidad': 'Local',
@@ -90,7 +91,7 @@ def test_oferta_duplicada(client):
             'fecha_cierre': '2025-06-01',
             'max_candidatos': '20',
             'cant_candidatos':'0',
-            'remuneracion': '100000',
+            'remuneracion': '50000',
             'beneficio': 'Home Office',
             'estado': 'Activa',
             'modalidad': 'Local',
@@ -104,15 +105,15 @@ def test_oferta_duplicada(client):
             'fecha_cierre': '2025-06-01',
             'max_candidatos': '20',
             'cant_candidatos':'0',
-            'remuneracion': '100000',
+            'remuneracion': '50000',
             'beneficio': 'Home Office',
             'estado': 'Activa',
             'modalidad': 'Local',
             'usuario_responsable': 'Fernando'
-        })
+        }, follow_redirects=True)
 
-        assert response2.status_code in [400, 409, 500]
-
+        assert b"Error: La oferta" in response2.data and b"ya existe. Elige un nombre diferente." in response2.data
+        
         ofertas = OfertaLaboral.query.filter_by(nombre='Desarrollador Java JR').all()
         assert len(ofertas) == 1
 
@@ -141,9 +142,14 @@ def test_campos_vacios(client):
             'estado': '',
             'modalidad': '',
             'usuario_responsable': '' 
-        })
+        }, follow_redirects=True)
 
-        assert response.status_code in [400,422]
+        assert b"El nombre debe tener entre 5 y 50 caracteres" in response.data
+        # assert b"La oferta" in response.data and b"ya existe. Elige un nombre diferente." in response.data
+        # assert b"candidatos debe estar entre 5 y 1000" in response.data
+        # assert b"Debe ser 'Local', 'Mixta' o 'Externa'" in response.data
+        # assert b"El campo beneficio debe tener entre 3 y 60 caracteres" in response.data
+        # assert b"La remun" in response.data and b"debe estar entre 201 y 89999"
 
 #Test que verifica que se cierre la oferta laboral(revisar)
 def test_validar_ciere_de_oferta(client):
@@ -155,9 +161,9 @@ def test_validar_ciere_de_oferta(client):
         response = client.post('/crear_oferta', data ={
             'nombre': 'QA Tester Ssr',
             'fecha_cierre': '2020-01-01',
-            'max_candidatos': '1',
+            'max_candidatos': '5',
             'cant_candidatos':'1',
-            'remuneracion': '300000',
+            'remuneracion': '5000',
             'beneficio': 'Gimnasio',
             'estado': 'Activa',
             'modalidad': 'Local',

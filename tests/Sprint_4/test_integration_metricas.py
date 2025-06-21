@@ -163,6 +163,8 @@ def test_metricas_promedios(client, setup_metricas):
     assert data["exp_tecnologia2"]["azure"] == 5.2
     assert data["exp_habilidad"]["adaptabilidad"] == 5.2
     assert data["exp_habilidad2"]["autodidacta"] == 5.2
+    assert "liderazgo" not in data["exp_habilidad"]
+    assert "python" not in data["exp_tecnologia"]
 
 def test_metricas_por_provincias(client, setup_metricas):
     oferta_id = setup_metricas

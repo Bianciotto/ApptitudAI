@@ -369,3 +369,76 @@ def test_calcular_puntaje_a_no_apto(app, setup_db):
         asignar_puntajes_automatica(oferta_id)
         postulacion = Postulacion.query.filter_by(idCandidato=candidato.id, idOfer=oferta_id).first()
         assert postulacion.puntaje == 0
+
+#Test que verifica que en un ranking con candidatos no aptos ninguno tenga puntaje
+def test_ranking_sin_aptos(app, setup_db):
+    with app.app_context():
+        ids = app.test_ids
+        oferta_id = setup_db
+
+        Candidato.query.delete()
+        Postulacion.query.delete()
+        db.session.commit()
+
+        candidatos = [
+            Candidato(
+                id="noapto1@mail.com",
+                nombre="Ana",
+                apellido="Lopez",
+                mail="noapto1@mail.com",
+                telefono="1111111111",
+                ubicacion="Buenos Aires",
+                experiencia=4,
+                idedu=ids["universitario"],
+                idtec=ids["sql"],
+                idtec2=ids["aws"],
+                idhab=ids["liderazgo"],
+                idhab2=ids["autodidacta"]
+            ),
+            Candidato(
+                id="noapto2@mail.com",
+                nombre="Bruno",
+                apellido="Martinez",
+                mail="noapto2@mail.com",
+                telefono="2222222222",
+                ubicacion="CABA",
+                experiencia=4,
+                idedu=ids["universitario"],
+                idtec=ids["sql"],
+                idtec2=ids["aws"],
+                idhab=ids["liderazgo"],
+                idhab2=ids["autodidacta"]
+            )
+        ]
+        db.session.add_all(candidatos)
+        db.session.commit()
+
+        for c in candidatos:
+            postulacion = Postulacion(
+                idCandidato=c.id,
+                idOfer=oferta_id,
+                experiencia=c.experiencia,
+                idedu=c.idedu,
+                idtec=c.idtec,
+                idtec2=c.idtec2,
+                idhab=c.idhab,
+                idhab2=c.idhab2,
+                aptitud=False,
+                puntaje=0  
+            )
+            db.session.add(postulacion)
+        db.session.commit()
+
+        asignar_puntajes_automatica(oferta_id)
+
+        puntajes = [
+            p.puntaje for p in Postulacion.query
+                .filter_by(idOfer=oferta_id)
+                .order_by(Postulacion.puntaje.desc())
+                .all()
+        ]
+
+        assert len(puntajes) == 2
+
+        for puntaje in puntajes:
+            assert puntaje == 0

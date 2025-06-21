@@ -42,7 +42,6 @@ def test_extraccion_datos_clave_pdf(client):
         sess["username"] = "Fernando"
         sess["type"] = "Admin_RRHH"
 
-    # Abre un PDF real de prueba con los datos clave
     with open("tests/Sprint_4/Files/Lucas_abalos_cv.pdf", "rb") as f:
         pdf_data = io.BytesIO(f.read())
         pdf_data.name = "cv_test.pdf"
@@ -60,12 +59,6 @@ def test_extraccion_datos_clave_pdf(client):
     assert b"lukotas100@gmail.com" in response.data
     assert b"java" in response.data or b"adaptabilidad" in response.data or b"Universitario" in response.data
 
-#Falta implementar en la app
-#Test que valida la extracion correcta de datos de archivos docx
-def test_extraccion_datos_clave_docx(client):
-    with client.session_transaction() as sess:
-        sess["username"] = "Fernando"
-        sess["type"] = "Admin_RRHH"
 
 #Test que valida que el sistema no acepte archivos invalidos
 def test_validar_archivos_invalidos(client):
