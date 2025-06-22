@@ -55,6 +55,11 @@ header {
     margin-top: 5px;
     opacity: 0;
     }
+
+
+    .logo, .logo-izquierda {
+    display: none !important;
+    }
 }
 
 .user-button:hover {
