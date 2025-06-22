@@ -385,9 +385,9 @@ def admin_rrhh():
 
 @app.route('/supervisor')
 def supervisor():
-    #if 'username' in session and session.get('type') == "Supervisor":
-        #return f"Bienvenido {session.get('username')} al panel de Supervisor."
-    return redirect('/predecir')
+    if 'username' in session and session.get('type') == "Supervisor":
+        return f"Bienvenido {session.get('username')} al panel de Supervisor."
+    return redirect('/login')
 
 
 @app.route('/analista')
@@ -619,7 +619,7 @@ def postulacion():
     )
 
 @app.route('/crear_oferta', methods=['GET', 'POST'])
-@login_required(roles=["Admin_RRHH", "Supervisor"])
+@login_required(roles=["Admin_RRHH"])
 def crear_oferta():
     if request.method == "POST":
         try:
@@ -740,7 +740,7 @@ def crear_oferta():
 
 
 @app.route("/ver_ofertas")
-@login_required(roles=["Admin_RRHH", "Supervisor"])
+@login_required(roles=["Admin_RRHH"])
 def ver_ofertas():
     ofertas = OfertaLaboral.query.order_by(OfertaLaboral.fecha_cierre.desc()).all()
 
@@ -830,10 +830,10 @@ def limpiar_ofertas_expiradas():
 
 # Página de estadísticas
 @app.route("/estadisticas", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH", "Supervisor"])
+@login_required(roles=["Admin_RRHH"])
 def estadisticas():
     if request.method == "POST":
-        return render_template("index.html")
+        return render_template("predecir.html")
     # Cargar modelo y encoders
     modelo = joblib.load(get_path("modelo_candidatos.pkl"))
     encoder_educacion = joblib.load(get_path("encoder_educacion.pkl"))
@@ -892,7 +892,7 @@ def estadisticas():
 
 # Ruta para predecir con un archivo CSV
 @app.route("/predecir", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH", "Supervisor"])
+@login_required(roles=["Admin_RRHH"])
 def predecir():
     plt.close("all")
     ofertas_activas = OfertaLaboral.query.filter_by(estado="Activa").all()
@@ -975,13 +975,13 @@ def predecir():
         except Exception as e:
             return f"Ocurrió un error al procesar el archivo: {e}"
 
-    return render_template("index.html", ofertas_activas=ofertas_activas, ofertas_cerradas=ofertas_cerradas, now=now, total_candidatos=total_candidatos)
+    return render_template("predecir.html", ofertas_activas=ofertas_activas, ofertas_cerradas=ofertas_cerradas, now=now, total_candidatos=total_candidatos)
 
 
 
 
 @app.route("/postulantes")
-@login_required(roles=["Admin_RRHH", "Supervisor"])
+@login_required(roles=["Admin_RRHH"])
 def postulantes():
     idOfer = request.args.get("idOfer")
     filtro = request.args.get("filtro")
@@ -1050,13 +1050,6 @@ def postulantes():
     # Aplicar filtro por aptitud si está activado
     if filtro == "apto":
         dataSet = dataSet[dataSet["Apto"] == "Apto"]
-
-    dataSet = dataSet.rename(columns={    
-    "Tecnologías": "Tecnología Principal",
-    "Habilidades": "Habilidad 1",
-    "Tecnologías2": "Tecnología Secundaria",
-    "Habilidades2": "Habilidad 2"
-})
 
     tabla_html = dataSet.to_html(classes="table table-striped", index=False)
     return render_template("postulantes.html", tabla=tabla_html, ofertas=OfertaLaboral.query.all(), idOfer=idOfer)
@@ -1446,7 +1439,7 @@ def extraer_info_cv_pdf(file_storage):
 
 
 @app.route("/cargarCV", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH", "Supervisor"])
+@login_required(roles=["Admin_RRHH"])
 def cargarCV():
     opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
     opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
@@ -1556,11 +1549,6 @@ def cargarCV():
                 )
                 db.session.add(candidato)
 
-            # Validación de postulación duplicada
-            if Postulacion.query.filter_by(idCandidato=candidato.id, idOfer=idOfer).first():
-                flash("❌Este candidato ya estaba postulado a la oferta seleccionada.", category="form")
-                return redirect("/cargarCV")
-
             nueva_postulacion = Postulacion(
                 idCandidato=candidato.id,
                 idOfer=idOfer,
@@ -1608,7 +1596,7 @@ def cargarCV():
 
 
 @app.route("/etiquetas", methods=["GET", "POST"])
-@login_required(roles=["Admin_RRHH", "Supervisor"])
+@login_required(roles=["Admin_RRHH"])
 def mostrar_etiquetas(idOfer=None):
     ofertas = OfertaLaboral.query.all()
     ofertas_activas = OfertaLaboral.query.filter_by(estado="Activa").all()
@@ -1665,14 +1653,7 @@ def mostrar_etiquetas(idOfer=None):
 @login_required(roles=["Admin_RRHH"])
 def actualizar_importancia(tipo, id):
     data = request.get_json()
-    try:
-        importancia = int(data["importancia"])
-    except (KeyError, ValueError):
-        return jsonify({"error": "Valor de importancia inválido"}), 400
-
-    # Validar rango
-    if importancia < 0 or importancia > 3:
-        return jsonify({"error": "La importancia debe estar entre 0 y 3"}), 400
+    importancia = int(data["importancia"])
 
     modelos = {
         "educacion": OfertaEducacion,
@@ -1694,17 +1675,9 @@ def actualizar_importancia(tipo, id):
     db.session.commit()
     return jsonify({"ok": True})
 
-def validar_importancia(valor_str):
-    try:
-        valor = int(valor_str)
-        if 0 <= valor <= 3:
-            return valor
-    except (TypeError, ValueError):
-        pass
-    return None
 
 @app.route("/asignar_valores/<int:idOfer>", methods=["POST"])
-@login_required(roles=["Admin_RRHH", "Supervisor"])
+@login_required(roles=["Admin_RRHH"])
 def asignar_valores(idOfer):
     oferta = OfertaLaboral.query.get(idOfer)
     if not oferta:
@@ -1712,40 +1685,40 @@ def asignar_valores(idOfer):
         return redirect(url_for("ver_ofertas"))
     # 📌 Educación
     educacion_id = request.form.get("educacion_id")
-    valor_educacion = validar_importancia(request.form.get("valor_educacion"))
-    if valor_educacion is not None:
+    valor_educacion = request.form.get("valor_educacion")
+    if valor_educacion:
         edu_rel = OfertaEducacion.query.filter_by(idOfer=idOfer, idEdu=educacion_id).first()
         if edu_rel:
             edu_rel.importancia = int(valor_educacion)
 
     # 📌 Tecnología
     tecnologia_id = request.form.get("tecnologia_id")
-    valor_tecnologia = validar_importancia(request.form.get("valor_tecnologia"))
-    if valor_tecnologia is not None:
+    valor_tecnologia = request.form.get("valor_tecnologia")
+    if valor_tecnologia:
         tec_rel = OfertaTecnologia.query.filter_by(idOfer=idOfer, idTec=tecnologia_id).first()
         if tec_rel:
             tec_rel.importancia = int(valor_tecnologia)
 
     # 📌 Tecnología secundaria
     tecnologia2_id = request.form.get("tecnologia2_id")
-    valor_tecnologia2 = validar_importancia(request.form.get("valor_tecnologia2"))
-    if valor_tecnologia2 is not None:
+    valor_tecnologia2 = request.form.get("valor_tecnologia2")
+    if valor_tecnologia2:
         tec2_rel = OfertaTecnologia2.query.filter_by(idOfer=idOfer, idTec2=tecnologia2_id).first()
         if tec2_rel:
             tec2_rel.importancia = int(valor_tecnologia2)
 
     # 📌 Habilidad
     habilidad_id = request.form.get("habilidad_id")
-    valor_habilidad = validar_importancia(request.form.get("valor_habilidad"))
-    if valor_habilidad is not None:
+    valor_habilidad = request.form.get("valor_habilidad")
+    if valor_habilidad:
         hab_rel = OfertaHabilidad.query.filter_by(idOfer=idOfer, idHab=habilidad_id).first()
         if hab_rel:
             hab_rel.importancia = int(valor_habilidad)
 
     # 📌 Habilidad secundaria
     habilidad2_id = request.form.get("habilidad2_id")
-    valor_habilidad2 = validar_importancia(request.form.get("valor_habilidad2"))
-    if valor_habilidad2 is not None:
+    valor_habilidad2 = request.form.get("valor_habilidad2")
+    if valor_habilidad2:
         hab2_rel = OfertaHabilidad2.query.filter_by(idOfer=idOfer, idHab2=habilidad2_id).first()
         if hab2_rel:
             hab2_rel.importancia = int(valor_habilidad2)
@@ -1860,7 +1833,11 @@ def eliminar_oferta(idOfer):
     flash("Oferta eliminada correctamente.", "success")
     return redirect(url_for('predecir'))
 
+@app.route('/portal_ofertas')
+def portal_ofertas():
+    ofertas_activas = OfertaLaboral.query.filter_by(estado="Activa").all()
+    return render_template('portal_ofertas.html', ofertas_activas=ofertas_activas)
 
 if __name__ == "__main__":
-    threading.Timer(1.5, abrir_navegador).start() 
+    threading.Timer(1.5, abrir_navegador).start()
     app.run(debug=True, host="127.0.0.1", port=5000)
