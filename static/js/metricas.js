@@ -193,7 +193,7 @@ select.addEventListener("change", () => {
                 const coordenadas = getCoordenadas(provincia);
                 if (coordenadas && cantidad > 0) {
                     L.marker(coordenadas).addTo(map)
-                        .bindPopup(`${provincia}: ${cantidad} candidatos`)
+                        .bindPopup(`${provincia}<br>Candidatos en total: ${cantidad}`)
                 }
             });
         });
@@ -280,3 +280,25 @@ function getCoordenadas(provincia) {
 // Inicializar el carrusel oculto
 showChart(currentChartIndex);
 if (carouselContainer) carouselContainer.style.display = "none";
+
+// Quitar el focus visual del botón del carrusel al hacer clic
+// Esto mejora la experiencia visual y evita el contorno azul tras el click
+// Puedes mover este bloque a tu archivo static/js/metricas.js si lo prefieres modular
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Mostrar panel solo si se selecciona una oferta
+    const select = document.getElementById('ofertaSelect');
+    const panel = document.querySelector('.prediccion-panel');
+    select.addEventListener('change', function () {
+        if (select.value) {
+            panel.style.display = 'block';
+        } else {
+            panel.style.display = 'none';
+        }
+    });
+    document.querySelectorAll('.carousel-arrow').forEach(function (btn) {
+        btn.addEventListener('mouseup', function () {
+            this.blur();
+        });
+    });
+});

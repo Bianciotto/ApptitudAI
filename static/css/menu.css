@@ -1,6 +1,11 @@
 /*MENU DESPLEGABLE LATERAL*/
 .menu-icon {
-    font-size: 2rem;
+        min-width: 48px;
+        min-height: 48px;
+        font-size: 2rem;
+        display: flex;
+        align-items: stretch;
+        justify-content: space-around;
     cursor: pointer;
     position: fixed;
     top: 0.7rem;
@@ -8,7 +13,7 @@
     opacity: 1;
     transition: opacity 0.2s;
     background-color: rgba(183, 0, 255, 0.2);
-    padding: 10px 15px;
+    padding: 6px 6px;
     border-radius: 60px;
     border: 2px solid #7644ff;
     color: white;
@@ -32,17 +37,7 @@
 .menu-toggle:checked ~ .menu-icon.sticky-left {
     left: 300px !important;
 }
-@media screen and (max-width: 768px) {
-    
-    .menu-toggle:not(:checked)~.menu-icon {
-    margin-left: -85px;
-    margin-top: 5px;
-}
-.menu-icon {
-    margin-top: 5px;
-    
-}
-}
+
 
 @media screen and (max-width: 450px) {
     
