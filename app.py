@@ -1139,9 +1139,9 @@ def predecir_postulantes():
             "Ubicacion": c.ubicacion,
             "Experiencia": c.experiencia,
             "Educacion": c.idedu,
-            "Tecnologias": c.idtec,
+            "Tecnologías": c.idtec,
             "Habilidades": c.idhab,
-            "Tecnologias2": c.idtec2,
+            "Tecnologías2": c.idtec2,
             "Habilidades2": c.idhab2,
             "Apto": c.aptitud if c.aptitud else "sin revisar",
             "Puntaje": c.puntaje
@@ -1151,13 +1151,13 @@ def predecir_postulantes():
         modelo = joblib.load(get_path("modelo_candidatos.pkl"))
 
         # Verificar que las columnas necesarias estén presentes
-        columnas_requeridas = ["Educacion", "Tecnologias", "Tecnologias2", "Habilidades", "Habilidades2"]
+        columnas_requeridas = ["Educacion", "Tecnologías", "Tecnologías2", "Habilidades", "Habilidades2"]
         for columna in columnas_requeridas:
             if columna not in dataSet.columns:
                 return f"Falta la columna requerida: {columna}"
 
         # Realizar predicciones
-        X = dataSet[["Educacion", "Tecnologias", "Tecnologias2", "Habilidades", "Habilidades2"]]
+        X = dataSet[["Educacion", "Tecnologías", "Tecnologías2", "Habilidades", "Habilidades2"]]
         predicciones = modelo.predict(X)
 
         # Guardar las predicciones en la base de datos
@@ -1175,9 +1175,9 @@ def predecir_postulantes():
         habilidad2_map = {hab2.idhab2: hab2.nombre for hab2 in Habilidad2.query.all()}
 
         dataSet["Educacion"] = dataSet["Educacion"].map(educacion_map)
-        dataSet["Tecnologias"] = dataSet["Tecnologias"].map(Tecnologia_map)
+        dataSet["Tecnologías"] = dataSet["Tecnologías"].map(Tecnologia_map)
         dataSet["Habilidades"] = dataSet["Habilidades"].map(habilidad_map)
-        dataSet["Tecnologias2"] = dataSet["Tecnologias2"].map(Tecnologia2_map)
+        dataSet["Tecnologías2"] = dataSet["Tecnologías2"].map(Tecnologia2_map)
         dataSet["Habilidades2"] = dataSet["Habilidades2"].map(habilidad2_map)
 
         # Actualizar el DataFrame con las predicciones
