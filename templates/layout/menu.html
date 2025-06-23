@@ -9,7 +9,7 @@
         <!-- Menú desplegable: Administración de Oferta -->
         <details>
             <summary>
-                <h3><i class="fas fa-briefcase"></i> Administracion de Ofertas</h3>
+                <h3><i class="fas fa-briefcase"></i> Administración de Ofertas</h3>
                 <span class="arrow">&#9662;</span>
             </summary>
             <div class="submenu">
@@ -33,7 +33,7 @@
         <!-- Menú desplegable: Configuración -->
         <details>
             <summary>
-                <h3><i class="fas fa-cogs"></i> Configuracion</h3>
+                <h3><i class="fas fa-cogs"></i> Configuración</h3>
                 <span class="arrow">&#9662;</span>
             </summary>
             <div class="submenu">
@@ -43,7 +43,7 @@
 
 
 
-        <!-- Menú desplegable: Metricas-->
+        <!-- Menú desplegable: Métricas -->
         <details>
             <summary>
                 <h3><i class="fas fa-chart-line"></i> Métricas</h3>
@@ -53,7 +53,7 @@
                 {% if session.get('type') == 'Admin_RRHH' %}
                 <a href="{{ url_for('metricas', oferta_id=idOfer) }}"><i class="fas fa-list"></i> Ver métricas</a>
                 {% endif %}
-                <a href="{{ url_for('estadisticas') }}"><i class="fas fa-sliders-h"></i> Estadisticas</a>
+                <a href="{{ url_for('estadisticas') }}"><i class="fas fa-sliders-h"></i> Estadísticas</a>
 
             </div>
 

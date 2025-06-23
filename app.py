@@ -476,29 +476,28 @@ def eliminar_usuario(id):
 
 @app.route('/enviar_correos')
 def enviar_correos():
-    #mails a candidatos aptos
-    destinatariosAptos = obtener_correos_aptos()
+    idOfer = request.args.get('idOfer')
+    oferta = OfertaLaboral.query.get(idOfer) if idOfer else None
+    nombre_oferta = oferta.nombre if oferta else ""
+    destinatariosAptos = obtener_correos_aptos(idOfer) if idOfer else obtener_correos_aptos()
+    destinatariosNoAptos = obtener_correos_noaptos(idOfer) if idOfer else obtener_correos_noaptos()
+
     with email.connect() as conn:
         for nombre, mail in destinatariosAptos:
-            mensaje = Message(subject='Oportunidad laboral',
-                              sender=app.config['MAIL_USERNAME'],
-                              recipients=[mail],
-                              body=f"Hola {nombre},\n\nHemos revisado tu perfil y estamos interesados en tu candidatura.\n¡Gracias por postularte!")
+            mensaje = Message(
+                subject=f"Proceso de selección - Puesto de {nombre_oferta}",
+                sender=app.config["MAIL_USERNAME"],
+                recipients=[mail],
+                body=f"Hola {nombre},\n\nHemos revisado tu perfil y estamos interesados en avanzar con tu candidatura para el puesto de {nombre_oferta}.\nNos gustaría coordinar una entrevista, por lo que te pedimos que nos indiques tus días y horarios disponibles.\n\nQuedamos atentos a tu respuesta.\n\nSaludos,\nEquipo de Perfect Match")
             conn.send(mensaje)
-    #mails a candidatos no aptos
-    destinatariosNoAptos = obtener_correos_noaptos()
-    with email.connect() as conn:
         for nombre, mail in destinatariosNoAptos:
-            mensaje = Message(subject='Oportunidad laboral',
-                                sender=app.config['MAIL_USERNAME'],
-                                recipients=[mail],
-                                body=f"Hola {nombre},\n\nLamentamos informarte que en esta oportunidad tu perfil no se ajusta a lo que buscamos.\nTe animamos a postularte en futuras oportunidades.")
+            mensaje = Message(
+                subject=f"Proceso de selección - Puesto de {nombre_oferta}",
+                sender=app.config["MAIL_USERNAME"],
+                recipients=[mail],
+                body=f"Hola {nombre},\n\nGracias por haberte postulado al puesto de {nombre_oferta} y por el tiempo que dedicaste al proceso.\nTras analizar tu perfil, en esta ocasión hemos decidido avanzar con otros candidatos que se ajustan mejor a los requerimientos del puesto.\n\nValoramos mucho tu interés y te alentamos a postularte a futuras oportunidades que se alineen con tu perfil.\n\n¡Te deseamos mucho éxito en tus próximos desafíos!\n\nSaludos cordiales,\nEquipo de Perfect Match")
             conn.send(mensaje)
     return redirect('/predecir')     
-
-
-
-
 
 
 # Página principal postulacion
@@ -624,6 +623,20 @@ def postulacion():
 def crear_oferta():
     if request.method == "POST":
         try:
+            # Verificar si todos los campos están vacíos
+            campos = [
+                request.form.get("nombre"),
+                request.form.get("fecha_cierre"),
+                request.form.get("max_candidatos"),
+                request.form.get("remuneracion"),
+                request.form.get("beneficio"),
+                request.form.get("descripcion"),
+                request.form.get("modalidad")
+            ]
+            if all(not c or str(c).strip() == "" for c in campos):
+                flash("❌ Debes completar al menos un campo para crear una oferta.", "error")
+                return redirect("/crear_oferta")
+
             nombre = request.form.get("nombre")
             fecha_cierre_str = request.form.get("fecha_cierre")
             max_candidatos = int(request.form.get("max_candidatos"))
@@ -1102,24 +1115,26 @@ def asignar_puntajes_automatica(idOfer):
 
 
 def enviar_correos_automatica(idOfer):
+    oferta = OfertaLaboral.query.get(idOfer)
+    nombre_oferta = oferta.nombre if oferta else ""
     destinatariosAptos = obtener_correos_aptos(idOfer)
     destinatariosNoAptos = obtener_correos_noaptos(idOfer)
 
     with email.connect() as conn:
         for nombre, mail in destinatariosAptos:
             mensaje = Message(
-                subject="Oportunidad laboral",
+                subject=f"Proceso de selección - Puesto de {nombre_oferta}",
                 sender=app.config["MAIL_USERNAME"],
                 recipients=[mail],
-                body=f"Hola {nombre},\n\nHemos revisado tu perfil y estamos interesados en tu candidatura.\n¡Gracias por postularte!")
+                body=f"Hola {nombre},\n\nHemos revisado tu perfil y estamos interesados en avanzar con tu candidatura para el puesto de {nombre_oferta}.\nNos gustaría coordinar una entrevista, por lo que te pedimos que nos indiques tus días y horarios disponibles.\n\nQuedamos atentos a tu respuesta.\n\nSaludos,\nEquipo de Perfect Match")
             conn.send(mensaje)
 
         for nombre, mail in destinatariosNoAptos:
             mensaje = Message(
-                subject="Oportunidad laboral",
+                subject=f"Proceso de selección - Puesto de {nombre_oferta}",
                 sender=app.config["MAIL_USERNAME"],
                 recipients=[mail],
-                body=f"Hola {nombre},\n\nLamentamos informarte que en esta oportunidad tu perfil no se ajusta a lo que buscamos.\nTe animamos a postularte en futuras oportunidades.")
+                body=f"Hola {nombre},\n\nGracias por haberte postulado al puesto de {nombre_oferta} y por el tiempo que dedicaste al proceso.\nTras analizar tu perfil, en esta ocasión hemos decidido avanzar con otros candidatos que se ajustan mejor a los requerimientos del puesto.\n\nValoramos mucho tu interés y te alentamos a postularte a futuras oportunidades que se alineen con tu perfil.\n\n¡Te deseamos mucho éxito en tus próximos desafíos!\n\nSaludos cordiales,\nEquipo de Perfect Match")
             conn.send(mensaje)
 
 
