@@ -1046,7 +1046,7 @@ def postulantes():
             "apto": "Apto" if p.aptitud is True else ("No apto" if p.aptitud is False else "Sin revisar"),
             "oferta": p.oferta.nombre if p.oferta else ""
         })
-        
+
     # Aplicar filtro por aptitud si está activado
     if filtro == "apto":
         lista_postulantes = [p for p in lista_postulantes if p["apto"] == "Apto"]
