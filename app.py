@@ -1016,24 +1016,6 @@ def postulantes():
                                ofertas=OfertaLaboral.query.all(), 
                                idOfer=idOfer)
 
-    # 🏆 Generar tabla con los datos actualizados
-    dataSet = pd.DataFrame([{
-        "Nombre": p.candidato.nombre,
-        "Apellido": p.candidato.apellido,
-        "Email": p.candidato.mail,
-        "Telefono": p.candidato.telefono,
-        "Ubicacion": p.candidato.ubicacion,
-        "Experiencia": p.experiencia,
-        "Educacion": p.idedu,
-        "Tecnologías": p.idtec,
-        "Habilidades": p.idhab,
-        "Tecnologías2": p.idtec2,
-        "Habilidades2": p.idhab2,
-        "Oferta Laboral": p.oferta.nombre,
-        "Apto": "Apto" if p.aptitud is True else ("No apto" if p.aptitud is False else "Sin revisar"),
-        "Puntaje": p.puntaje
-    } for p in postulaciones])
-
     # Mapear nombres de educación, tecnología y habilidades como ya lo hacías
     educacion_map = {edu.idedu: edu.nombre for edu in Educacion.query.all()}
     tecnologia_map = {tec.idtec: tec.nombre for tec in Tecnologia.query.all()}
@@ -1041,18 +1023,35 @@ def postulantes():
     tecnologia2_map = {tec2.idtec2: tec2.nombre for tec2 in Tecnologia2.query.all()}
     habilidad2_map = {hab2.idhab2: hab2.nombre for hab2 in Habilidad2.query.all()}
 
-    dataSet["Educacion"] = dataSet["Educacion"].map(educacion_map)
-    dataSet["Tecnologías"] = dataSet["Tecnologías"].map(tecnologia_map)
-    dataSet["Habilidades"] = dataSet["Habilidades"].map(habilidad_map)
-    dataSet["Tecnologías2"] = dataSet["Tecnologías2"].map(tecnologia2_map)
-    dataSet["Habilidades2"] = dataSet["Habilidades2"].map(habilidad2_map)
+    # Construir lista de diccionarios para cada postulante
+    lista_postulantes = []
+    for p in postulaciones:
+        lista_postulantes.append({
+            "nombre": p.candidato.nombre,
+            "apellido": p.candidato.apellido,
+            "email": p.candidato.mail,
+            "telefono": p.candidato.telefono,
+            "ubicacion": p.candidato.ubicacion,
+            "experiencia": p.experiencia,
+            "educacion": educacion_map.get(p.idedu, ""),
+            "puntaje": p.puntaje,
+            "tecnologias": [
+                tecnologia_map.get(p.idtec, ""),
+                tecnologia2_map.get(p.idtec2, "")
+            ],
+            "habilidades": [
+                habilidad_map.get(p.idhab, ""),
+                habilidad2_map.get(p.idhab2, "")
+            ],
+            "apto": "Apto" if p.aptitud is True else ("No apto" if p.aptitud is False else "Sin revisar"),
+            "oferta": p.oferta.nombre if p.oferta else ""
+        })
 
     # Aplicar filtro por aptitud si está activado
     if filtro == "apto":
-        dataSet = dataSet[dataSet["Apto"] == "Apto"]
+        lista_postulantes = [p for p in lista_postulantes if p["apto"] == "Apto"]
 
-    tabla_html = dataSet.to_html(classes="table table-striped", index=False)
-    return render_template("postulantes.html", tabla=tabla_html, ofertas=OfertaLaboral.query.all(), idOfer=idOfer)
+    return render_template("postulantes.html",postulantes=lista_postulantes,ofertas=OfertaLaboral.query.all(),idOfer=idOfer)
 
 
 def predecir_postulantes_automatica(idOfer):
