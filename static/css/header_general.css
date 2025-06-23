@@ -17,13 +17,23 @@ header {
     max-height: 70px;
     max-width: 100%;
 }
-
+@media screen and (max-width: 768px) {
+.logo, .logo-izquierda {
+    display: none !important;
+  }
+}
 /* MENU DE USUARIO */
 
 .user-menu-wrapper {
     top: 1rem;
     right: 2rem;
     position: fixed;
+}
+
+@media screen and (max-width: 768px) {
+    .user-menu-wrapper {
+        margin-right: -15px;
+    }
 }
 
 .user-checkbox {
@@ -78,6 +88,15 @@ header {
     transform: translateY(0);
     transition-delay: 0s;
     z-index: 100;
+}
+
+@media screen and (max-width: 768px) {
+    
+    .menu-toggle:not(:checked)~.user-checkbox {
+    margin-left: -85px;
+    margin-top: 5px;
+    opacity: 0;
+    }
 }
 
 

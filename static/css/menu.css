@@ -14,9 +14,21 @@
     color: white;
     z-index: 11;
 }
+
+@media screen and (max-width: 768px) {
+    
+    .menu-toggle:not(:checked)~.menu-icon {
+    margin-left: -85px;
+    margin-top: 5px;
+}
+.menu-icon {
+    margin-top: 5px;
+    
+}
+}
  
 .menu-icon.hide-menu {
-    opacity: 0;
+    opacity: 1;
     pointer-events: none;
     transition: opacity 0.3s;
 }
@@ -25,6 +37,18 @@
     left: 10px !important;
     opacity: 1;
     transition: opacity 0.3s;
+}
+
+.menu-toggle:checked ~ .menu-icon.sticky-left {
+    left: 300px !important;
+}
+
+
+@media screen and (max-width: 450px) {
+    
+    #menu-toggle:checked ~ header .user-menu-wrapper {
+    display: none !important;
+}
 }
 
 /* Posición cuando el menú está cerrado */
@@ -52,6 +76,16 @@
     overflow: visible !important;
     /* Asegura que no recorte el tooltip */
 
+}
+
+
+@media screen and (max-width: 768px) {
+    .tooltip {
+        top: -130%;
+        left: -20%;
+        transform: translateY(-50%) translateX(0);
+    }
+    
 }
 
 
@@ -243,6 +277,16 @@ details[open] .arrow {
     z-index: 30;
     /* Muy alto para que quede por encima de todo */
     padding-left: 0;
+}
+
+@media screen and (max-width: 768px) {
+    .tooltip {
+        top: -130%;
+        left: -20%;
+        transform: translateY(-50%) translateX(0);
+        /* Centrado en pantallas pequeñas */
+    }
+    
 }
 
 .support-button:hover>.tooltip {

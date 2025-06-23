@@ -23,7 +23,9 @@
 
         <section class="user-menu-container">
     <div class="menu-list">
-        <a href="{{ url_for('gestionar_usuarios') }}">Gestionar Roles</a>
+        {% if session.get('type') == 'Admin_RRHH' %}
+            <a href="{{ url_for('gestionar_usuarios') }}">Gestionar Roles</a>
+        {% endif %}
     </div>
     <div class="menu-list">
         <a href="{{ url_for('predecir') }}">

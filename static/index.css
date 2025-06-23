@@ -270,9 +270,7 @@ h1{
   .prediccion-panel {
     margin-top: 80px !important;
   }
-  .logo, .logo-izquierda {
-    display: none !important;
-  }
+  
   .gauges-container {
     padding: 10px 2vw 10px 2vw;
     max-width: 99vw;
