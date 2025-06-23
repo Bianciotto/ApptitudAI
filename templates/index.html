@@ -11,13 +11,16 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/header_general.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fragments/particles.css') }}">
-</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fragments/titles.css') }}">
+  </head>
 
 <body >
   {% include "fragments/particles.html" %}
   {% include "layout/header_general.html" %}
   {% include "layout/menu.html" %}
-  
+  <main>
+  <h1 class="subrayado-multicolor "><p >ApptitudAI</p></h1>
+  <h1><p class="title-perfect-violet">Bienvenido</p><p class="title-match-blue">{{ usuario }}</p></h1>
   <div class="prediccion-panel">
     <!-- Contenedor de gauges con glow -->
     <div class="gauges-container">
@@ -209,6 +212,7 @@
       color: #fff;
     }
     </style>
+  </main>
   {% include "layout/footer.html" %}
 </body>
 

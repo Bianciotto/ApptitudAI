@@ -995,7 +995,7 @@ def predecir():
         except Exception as e:
             return f"Ocurrió un error al procesar el archivo: {e}"
 
-    return render_template("index.html", ofertas_activas=ofertas_activas, ofertas_cerradas=ofertas_cerradas, now=now, total_candidatos=total_candidatos)
+    return render_template("index.html", ofertas_activas=ofertas_activas, ofertas_cerradas=ofertas_cerradas, now=now, total_candidatos=total_candidatos,usuario=session.get("username"))
 
 
 
@@ -1900,4 +1900,4 @@ def portal_ofertas():
 
 if __name__ == "__main__":
     threading.Timer(1.5, abrir_navegador).start()
-    app.run(debug=False, host="127.0.0.1", port=5000)
+    app.run(debug=True, host="127.0.0.1", port=5000)
