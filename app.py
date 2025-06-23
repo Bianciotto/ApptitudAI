@@ -92,6 +92,7 @@ class OfertaLaboral(db.Model):
     cant_candidatos = db.Column(db.Integer, nullable=False, default=0)
     remuneracion = db.Column(db.String(50), nullable=False)
     beneficio = db.Column(db.String(200), nullable=True)
+    descripcion = db.Column(db.String(200), nullable=True)
     estado = db.Column(db.String(50), nullable=False, default="Activa")
     modalidad = db.Column(db.String(20), nullable=False)
     usuario_responsable = db.Column(db.String(100), nullable=False)
@@ -208,7 +209,7 @@ def get_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-'''
+"""
 # Crear la base de datos y agregar usuarios ficticios si no existen
 with app.app_context():
     db.create_all()
@@ -259,7 +260,7 @@ with app.app_context():
     db.session.commit()
     print("Usuarios ficticios creados con éxito.")
 
-'''
+"""
 
 # Cargar el modelo correctamente
 modelo_path = get_path("modelo_candidatos.pkl")
@@ -628,6 +629,7 @@ def crear_oferta():
             max_candidatos = int(request.form.get("max_candidatos"))
             remuneracion = "$" + request.form.get("remuneracion") 
             beneficio = request.form.get("beneficio")  
+            descripcion = request.form.get("descripcion")
             usuario_responsable = session.get("username")  
             modalidad = request.form.get("modalidad")  
             fecha_cierre = datetime.strptime(fecha_cierre_str, "%Y-%m-%d")
@@ -660,6 +662,10 @@ def crear_oferta():
                 flash("❌ El campo beneficio debe tener entre 3 y 60 caracteres.", "error")
                 return redirect("/crear_oferta")
 
+            if not (descripcion and 10 < len(descripcion) < 201):
+                flash("❌ La descripción debe tener entre 10 y 200 caracteres.", "error")
+                return redirect("/crear_oferta")
+
             #  Validar modalidad antes de crear la oferta
             if modalidad not in ["Local", "Mixta", "Externa"]:
                 flash("❌ Modalidad inválida. Debe ser 'Local', 'Mixta' o 'Externa'.", "error")
@@ -671,6 +677,7 @@ def crear_oferta():
                 max_candidatos=max_candidatos,
                 remuneracion=remuneracion,
                 beneficio=beneficio,
+                descripcion=descripcion,
                 estado="Activa",  #  Siempre comienza como "Activa"
                 modalidad=modalidad,  #  Guardamos la modalidad
                 usuario_responsable=usuario_responsable
@@ -756,6 +763,7 @@ def ver_ofertas():
         "Cantidad Máx. de Candidatos": o.max_candidatos,
         "Remuneración": o.remuneracion,
         "Beneficio": o.beneficio,
+        "Descripción": o.descripcion,
         "Tipo": o.modalidad,
         "Estado": o.estado,
         "Responsable": o.usuario_responsable,
@@ -770,7 +778,6 @@ def ver_ofertas():
     tabla_html = dataSet.to_html(classes="table table-striped", index=False, escape=False)
 
     return render_template("ver_ofertas.html", tabla=tabla_html)
-
 
 
 @app.route("/cerrar_oferta/<int:idOfer>", methods=["POST"])
@@ -1132,9 +1139,9 @@ def predecir_postulantes():
             "Ubicacion": c.ubicacion,
             "Experiencia": c.experiencia,
             "Educacion": c.idedu,
-            "Tecnologías": c.idtec,
+            "Tecnologias": c.idtec,
             "Habilidades": c.idhab,
-            "Tecnologías2": c.idtec2,
+            "Tecnologias2": c.idtec2,
             "Habilidades2": c.idhab2,
             "Apto": c.aptitud if c.aptitud else "sin revisar",
             "Puntaje": c.puntaje
@@ -1144,13 +1151,13 @@ def predecir_postulantes():
         modelo = joblib.load(get_path("modelo_candidatos.pkl"))
 
         # Verificar que las columnas necesarias estén presentes
-        columnas_requeridas = ["Educacion", "Tecnologías", "Tecnologías2", "Habilidades", "Habilidades2"]
+        columnas_requeridas = ["Educacion", "Tecnologias", "Tecnologias2", "Habilidades", "Habilidades2"]
         for columna in columnas_requeridas:
             if columna not in dataSet.columns:
                 return f"Falta la columna requerida: {columna}"
 
         # Realizar predicciones
-        X = dataSet[["Educacion", "Tecnologías", "Tecnologías2", "Habilidades", "Habilidades2"]]
+        X = dataSet[["Educacion", "Tecnologias", "Tecnologias2", "Habilidades", "Habilidades2"]]
         predicciones = modelo.predict(X)
 
         # Guardar las predicciones en la base de datos
@@ -1168,9 +1175,9 @@ def predecir_postulantes():
         habilidad2_map = {hab2.idhab2: hab2.nombre for hab2 in Habilidad2.query.all()}
 
         dataSet["Educacion"] = dataSet["Educacion"].map(educacion_map)
-        dataSet["Tecnologías"] = dataSet["Tecnologías"].map(Tecnologia_map)
+        dataSet["Tecnologias"] = dataSet["Tecnologias"].map(Tecnologia_map)
         dataSet["Habilidades"] = dataSet["Habilidades"].map(habilidad_map)
-        dataSet["Tecnologías2"] = dataSet["Tecnologías2"].map(Tecnologia2_map)
+        dataSet["Tecnologias2"] = dataSet["Tecnologias2"].map(Tecnologia2_map)
         dataSet["Habilidades2"] = dataSet["Habilidades2"].map(habilidad2_map)
 
         # Actualizar el DataFrame con las predicciones
@@ -1862,4 +1869,4 @@ def portal_ofertas():
 
 if __name__ == "__main__":
     threading.Timer(1.5, abrir_navegador).start()
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    app.run(debug=False, host="127.0.0.1", port=5000)

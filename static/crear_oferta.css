@@ -240,6 +240,7 @@ form textarea {
 
 input,
 select,
+textarea,
 button {
   outline: none;
   margin: 10px 0;
