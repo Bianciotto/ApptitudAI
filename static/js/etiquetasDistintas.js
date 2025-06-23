@@ -20,4 +20,86 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
   });
+
+  // Carrusel simple para la página de etiquetas
+  // Muestra solo una tabla a la vez y navega con los botones
+
+  const charts = document.querySelectorAll('.carousel-chart');
+  let currentChartIndex = 0;
+
+  function showChart(index) {
+    charts.forEach((chart, i) => {
+      chart.style.display = (i === index) ? 'block' : 'none';
+    });
+    document.getElementById('prevChart').disabled = index === 0;
+    document.getElementById('nextChart').disabled = index === charts.length - 1;
+  }
+
+  document.getElementById('prevChart').addEventListener('click', () => {
+    if (currentChartIndex > 0) {
+      currentChartIndex--;
+      showChart(currentChartIndex);
+    }
+  });
+
+  document.getElementById('nextChart').addEventListener('click', () => {
+    if (currentChartIndex < charts.length - 1) {
+      currentChartIndex++;
+      showChart(currentChartIndex);
+    }
+  });
+
+  // Inicializa el carrusel
+  showChart(currentChartIndex);
+});
+
+// Corrige el comportamiento para que solo la tabla activa esté visible
+// y nunca se muestren dos a la vez
+
+document.addEventListener('DOMContentLoaded', function () {
+  const charts = document.querySelectorAll('.carousel-chart');
+  let currentChartIndex = 0;
+
+  function showChart(index) {
+    charts.forEach((chart, i) => {
+      chart.classList.toggle('active', i === index);
+    });
+    document.getElementById('prevChart').disabled = index === 0;
+    document.getElementById('nextChart').disabled = index === charts.length - 1;
+  }
+
+  document.getElementById('prevChart').addEventListener('click', () => {
+    if (currentChartIndex > 0) {
+      currentChartIndex--;
+      showChart(currentChartIndex);
+    }
+  });
+
+  document.getElementById('nextChart').addEventListener('click', () => {
+    if (currentChartIndex < charts.length - 1) {
+      currentChartIndex++;
+      showChart(currentChartIndex);
+    }
+  });
+
+  // Quitar el focus visual del botón del carrusel al hacer clic
+  document.querySelectorAll('.carousel-arrow').forEach(function (btn) {
+    btn.addEventListener('mouseup', function () {
+      this.blur();
+    });
+  });
+
+  // Inicializa el carrusel
+  showChart(currentChartIndex);
+});
+document.querySelectorAll('.input-num-custom').forEach(function(wrapper) {
+  const input = wrapper.querySelector('.input-importancia');
+  wrapper.querySelector('.menos').onclick = function() {
+    input.stepDown();
+    input.dispatchEvent(new Event('input'));
+  };
+  wrapper.querySelector('.mas').onclick = function() {
+    input.stepUp();
+    input.dispatchEvent(new Event('input'));
+  };
 });
