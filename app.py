@@ -24,7 +24,7 @@ from datetime import datetime
 from flask import jsonify
 import fitz
 from datetime import datetime, timedelta
-
+from math import ceil
 
 app = Flask(__name__)
 app.secret_key = "MiraQueSéQueMeVes"  # Necesario para sesiones
@@ -1005,6 +1005,8 @@ def predecir():
 def postulantes():
     idOfer = request.args.get("idOfer")
     filtro = request.args.get("filtro")
+    page = int(request.args.get("page", 1))
+    per_page = 4
 
     ofertas = OfertaLaboral.query.all()
     if not idOfer:
@@ -1034,7 +1036,9 @@ def postulantes():
         return render_template("postulantes.html", 
                                mensaje="No hay postulaciones disponibles.", 
                                ofertas=OfertaLaboral.query.all(), 
-                               idOfer=idOfer)
+                               idOfer=idOfer,
+                               page=1,
+                               total_pages=1)
 
     # Mapear nombres de educación, tecnología y habilidades como ya lo hacías
     educacion_map = {edu.idedu: edu.nombre for edu in Educacion.query.all()}
@@ -1071,8 +1075,20 @@ def postulantes():
     if filtro == "apto":
         lista_postulantes = [p for p in lista_postulantes if p["apto"] == "Apto"]
 
-    return render_template("postulantes.html",postulantes=lista_postulantes,ofertas=OfertaLaboral.query.all(),idOfer=idOfer)
+    total = len(lista_postulantes)
+    total_pages = max(1, ceil(total / per_page))
+    start = (page - 1) * per_page
+    end = start + per_page
+    postulantes_pagina = lista_postulantes[start:end]
 
+    return render_template(
+    "postulantes.html",
+    postulantes=postulantes_pagina,
+    ofertas=OfertaLaboral.query.all(),
+    idOfer=idOfer,
+    page=page,
+    total_pages=total_pages
+)
 
 def predecir_postulantes_automatica(idOfer):
     # 📌 Obtener las postulaciones de la oferta

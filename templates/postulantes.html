@@ -29,10 +29,81 @@
       {% endfor %}
     </select>
   </form>
-
-  <div class="tabla-container">
-    {{ tabla|safe }}
+  
+  {% if postulantes|length == 0 %}
+    <div class="no-candidatos-msg">
+      No hay candidatos disponibles para esta oferta.
+    </div>
+  {% else %}
+  <div class="cards-container">
+    {% for postulante in postulantes %}
+    <div class="postulante-card">
+      <div class="card-header">
+        <h2>{{ postulante.nombre }} {{ postulante.apellido }}
+        <span class="aptitud-label {% if postulante.apto == 'Apto' %}apto{% elif postulante.apto == 'No apto' %}noapto{% else %}sinrevisar{% endif %}">
+          {{ postulante.apto }}
+        </span>
+        </h2>
+        <div class="card-contact">
+          <i class="fa-solid fa-envelope icono-card"></i> {{ postulante.email }}<br>
+          <i class="fa-solid fa-phone"></i> {{ postulante.telefono }}<br>
+          <i class="fa-solid fa-location-dot"></i> {{ postulante.ubicacion }}
+        </div>
+      </div>
+      <hr>
+      <div class="card-info-row">
+        <section class="info-section">
+          <span class="info-label">Experiencia</span>
+          <span>{{ postulante.experiencia }} años</span>
+        </section>
+        <section class="info-section">
+          <span class="info-label">Educacion</span>
+          <span>{{ postulante.educacion }}</span>
+        </section>
+        <section class="info-section">
+          <span class="info-label">Puntaje</span>
+          <span>{{ postulante.puntaje }}</span>
+        </section>
+      </div>
+      <hr>
+      <div class="card-tec">
+        <i class="fa-solid fa-star icono-card"></i>
+        <span class="tec-label">Tecnologías</span>
+        <div class="tec-tags">
+          {% for tec in postulante.tecnologias %}
+            <span class="tag">{{ tec }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <hr>
+      <div class="card-hab">
+        <i class="fa-solid fa-lightbulb icono-card"></i>
+        <span class="hab-label">Habilidades</span>
+        <div class="hab-tags">
+          {% for hab in postulante.habilidades %}
+            <span class="tag">{{ hab }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
   </div>
+{% endif %}
+
+  <div class="pagination">
+  <a href="{% if page > 1 %}{{ url_for('postulantes', idOfer=idOfer, page=page-1) }}{% else %}#{% endif %}"
+     class="page-btn{% if page <= 1 %} disabled{% endif %}"
+     {% if page <= 1 %}tabindex="-1" aria-disabled="true"{% endif %}>
+    &laquo; Anterior
+  </a>
+  <span class="page-info">Página {{ page }} de {{ total_pages }}</span>
+  <a href="{% if page < total_pages %}{{ url_for('postulantes', idOfer=idOfer, page=page+1) }}{% else %}#{% endif %}"
+     class="page-btn{% if page >= total_pages %} disabled{% endif %}"
+     {% if page >= total_pages %}tabindex="-1" aria-disabled="true"{% endif %}>
+    Siguiente &raquo;
+  </a>
+</div>
+
   {% include "layout/footer.html" %}
 </body>
 
