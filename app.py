@@ -1787,7 +1787,7 @@ def asignar_valores(idOfer):
 
 
 @app.route("/metricas")
-@login_required(roles=["Admin_RRHH"])
+@login_required(roles=["Admin_RRHH","analista"])
 def metricas():
     ofertas = OfertaLaboral.query.all()
     return render_template("metricas.html", ofertas=ofertas)

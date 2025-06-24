@@ -128,6 +128,19 @@ select {
     text-align: center;
 }
 
+.box-background-child{
+    padding: 10px 2vw 10px 2vw !important;
+    max-width: 80vw !important
+}
+
+@media screen and (min-width: 600px) {
+    .box-background-child{
+    padding: 10px 2vw 10px 2vw !important;
+    max-width: 30vw !important
+}
+    
+}
+
 select:focus {
     color: #ffffff;  
     text-shadow: 0 0 10px #ffffff;

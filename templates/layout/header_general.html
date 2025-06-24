@@ -22,20 +22,21 @@
         </label>
 
         <section class="user-menu-container">
-    <div class="menu-list">
-        {% if session.get('type') == 'Admin_RRHH' %}
-            <a href="{{ url_for('gestionar_usuarios') }}">Gestionar Roles</a>
-        {% endif %}
-    </div>
-    <div class="menu-list">
-        <a href="{{ url_for('predecir') }}">
-            <i class="fas fa-home"></i> Volver al Inicio
-        </a>
-    </div>
-    <div class="menu-list">
-        <a href="{{ url_for('logout') }}">Cerrar sesión</a>
-    </div>
+        <div class="menu-list">
+            <a href="{{ url_for('predecir') }}">
+                <!--<i class="fas fa-home"></i>--> Volver al Inicio
+            </a>
+        </div>
+        <div class="menu-list">
+            {% if session.get('type') == 'Admin_RRHH' %}
+                <a href="{{ url_for('gestionar_usuarios') }}">Gestionar Roles</a>
+            {% endif %}
+        </div>
+        
+        <div class="menu-list">
+            <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+        </div>
     
-</section>
+    </section>
     </div>
 </header>
