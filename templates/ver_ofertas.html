@@ -9,13 +9,16 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/header_general.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fragments/particles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fragments/titles.css') }}">
 </head>
 
 <body>
+  {% include "fragments/particles.html" %}
   {% include "layout/header_general.html" %}
   {% include "layout/menu.html" %}
 
-  <h1>Ver<span class="subtitulo">Ofertas Laborales</span></h1>
+  <h1><p class="title-perfect-violet">Ver </p><p class="title-match-blue">Ofertas Laborales</p></h1>
 
   <div class="tabla-container">
     {{ tabla|safe }}

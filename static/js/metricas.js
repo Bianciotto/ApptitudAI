@@ -115,16 +115,16 @@ select.addEventListener("change", () => {
                         label: 'Cantidad de candidatos por estado',
                         data: [data.total_postulantes, data.aptos, data.no_aptos, data.sin_revisar],
                         backgroundColor: [
-                            'rgba(88, 24, 154, 0.7)',
-                            'rgba(162, 89, 255, 0.7)',
-                            'rgba(57, 248, 248, 0.7)',
-                            'rgba(255, 111, 255, 0.7)'
+                            'rgba(235, 28, 183, 0.74)',
+                            'rgba(57, 180, 57, 0.86)',
+                            'rgba(248, 20, 20, 0.7)',
+                            'rgba(57, 248, 248, 0.7)'
                         ],
                         borderColor: [
-                            'rgba(88, 24, 154, 1)',
-                            'rgba(162, 89, 255, 1)',
-                            'rgba(57, 248, 248, 1)',
-                            'rgba(255, 111, 255, 1)'
+                            'rgba(235, 28, 183, 0.74)',
+                            'rgba(57, 180, 57, 0.86)',
+                            'rgba(248, 20, 20, 0.7)',
+                            'rgba(57, 248, 248, 0.7)'
                         ],
                         borderWidth: 2,
                         borderRadius: 8
@@ -217,18 +217,10 @@ function crearBarChart(ctx, etiquetas, datos, titulo, stepSize = 5) {
                 label: titulo,
                 data: datos,
                 backgroundColor: [
-                    'rgba(88, 24, 154, 0.7)',
-                    'rgba(162, 89, 255, 0.7)',
-                    'rgba(57, 248, 248, 0.7)',
-                    'rgba(0, 212, 255, 0.7)',
-                    'rgba(255, 111, 255, 0.7)'
+                    'rgba(0, 212, 255, 0.7)'
                 ],
                 borderColor: [
-                    'rgba(88, 24, 154, 1)',
-                    'rgba(162, 89, 255, 1)',
-                    'rgba(57, 248, 248, 1)',
-                    'rgba(0, 212, 255, 1)',
-                    'rgba(255, 111, 255, 1)'
+                    'rgba(0, 212, 255, 0.7)'
                 ],
                 borderWidth: 2,
                 borderRadius: 8

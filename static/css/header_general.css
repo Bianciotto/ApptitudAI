@@ -99,5 +99,9 @@ header {
     }
 }
 
+#user-toggle:checked ~ a[title="Volver al inicio"] {
+    display: none !important;
+}
+
 
 

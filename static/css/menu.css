@@ -390,3 +390,30 @@ details[open] .arrow {
   opacity: 1;
   transform: translateY(-50%) translateX(15px);
 }
+
+/* Scrollbar para el menú lateral */
+.side-menu,
+.menu-content {
+    scrollbar-width: thin;
+    scrollbar-color: #7644ff #1a085a; /* thumb color, track color */
+}
+
+/* Para navegadores basados en Webkit (Chrome, Edge, Safari) */
+.side-menu::-webkit-scrollbar,
+.menu-content::-webkit-scrollbar {
+    width: 10px;
+    background: #1a085a;
+    border-radius: 8px;
+}
+
+.side-menu::-webkit-scrollbar-thumb,
+.menu-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #7644ff 40%, #3815b8 100%);
+    border-radius: 8px;
+    border: 2px solid #1a085a;
+}
+
+.side-menu::-webkit-scrollbar-thumb:hover,
+.menu-content::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #a084ff 40%, #7644ff 100%);
+}

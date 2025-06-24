@@ -530,41 +530,79 @@ def postulacionIT():
 
 @app.route("/postulacion", methods=["GET", "POST"])
 def postulacion():
-    #es_admin = "username" in session and session.get("type") == "Admin_RRHH"
+    opciones_ofertas = [{"idOfer": oferta.idOfer, "nombre": oferta.nombre} for oferta in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
+    opciones_educacion = [educacion.nombre for educacion in Educacion.query.all()]
+    opciones_tecnologias = [tecnologia.nombre for tecnologia in Tecnologia.query.all()]
+    opciones_habilidades = [habilidad.nombre for habilidad in Habilidad.query.all()]
+    opciones_tecnologias2 = [tecnologia2.nombre for tecnologia2 in Tecnologia2.query.all()]
+    opciones_habilidades2 = [habilidad2.nombre for habilidad2 in Habilidad2.query.all()]
+
+    session["opciones_ofertas"] = opciones_ofertas
+    session["opciones_educacion"] = opciones_educacion
+    session["opciones_tecnologias"] = opciones_tecnologias
+    session["opciones_habilidades"] = opciones_habilidades
+    session["opciones_tecnologias2"] = opciones_tecnologias2
+    session["opciones_habilidades2"] = opciones_habilidades2
 
     if request.method == "POST":
-        # Obtener datos del formulario
+        if "cv_pdf" in request.files:
+            file = request.files["cv_pdf"]
+            if file and file.filename.endswith(".pdf"):
+                # revisar si pesa menos de 5MB:
+                file.seek(0, os.SEEK_END)
+                size = file.tell()
+                file.seek(0)
+               
+                if size > 5 * 1024 * 1024:
+                    flash("❌El archivo excede el tamaño máximo permitido de 5 MB.", category="pdf")
+                    return redirect("/postulacion")
+                
+                try:
+                    info = extraer_info_cv_pdf(file)
+                    flash("✔️Información extraída exitosamente del archivo PDF.", category="pdf")
+                    return render_template(
+                        "postulacion.html",
+                        opciones_ofertas=opciones_ofertas,
+                        opciones_educacion=opciones_educacion,
+                        opciones_tecnologias=opciones_tecnologias,
+                        opciones_habilidades=opciones_habilidades,
+                        opciones_tecnologias2=opciones_tecnologias2,
+                        opciones_habilidades2=opciones_habilidades2,
+                        precargado=info
+                    )
+                except Exception:
+                    flash("❌El archivo no es un PDF válido o está dañado.", category="pdf")
+                    return redirect("/postulacion")
+            else:
+                flash("❌Debes seleccionar un archivo PDF válido para continuar.", category="pdf")
+                return redirect("/postulacion")
+
         nombre = request.form["nombre"]
         apellido = request.form["apellido"]
         email = request.form["email"]
-        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not re.match(email_regex, email):
-            flash("Por favor ingresa un email válido.<br>Ejemplo: JuanPerez@gmail.com")
-            return redirect("/postulacion")
         telefono = request.form["telefono"]
-        if not telefono.isdigit() or len(telefono) < 8 or len(telefono) > 10:
-            flash("El teléfono debe contener solo números y tener entre 8 y 10 cifras.")
-            return redirect("/postulacion")
         ubicacion = request.form["ubicacion"]
-        PROVINCIAS_ARG = [
-        "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
-        "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
-        "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
-        "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
-        "Tierra del Fuego", "Tucumán"]
-        if ubicacion not in PROVINCIAS_ARG:
-            flash("Ubicación no válida. Selecciona una provincia de Argentina.")
-            return redirect("/postulacion")
         experiencia = int(request.form["experiencia"])
         educacion = request.form["educacion"]
         tecnologias = request.form["tecnologias"]
         habilidades = request.form["habilidades"]
-        idOfer = request.form.get("idOfer")
         tecnologias2 = request.form["tecnologias2"]
         habilidades2 = request.form["habilidades2"]
+        idOfer = request.form.get("idOfer")
+
+        if not idOfer:
+            flash("Debes seleccionar una oferta laboral.", category="form")
+            return redirect("/postulacion")
 
         try:
-            # Buscar el ID correspondiente en las tablas
+            oferta = OfertaLaboral.query.get(idOfer)
+
+            if oferta.estado == "Cerrada":
+                flash("❌La oferta ya alcanzó el máximo de postulaciones.", category="form")
+                return redirect("/postulacion")
+
+            candidato = Candidato.query.filter_by(mail=email).first()
+
             educacion_obj = Educacion.query.filter_by(nombre=educacion).first()
             tecnologia_obj = Tecnologia.query.filter_by(nombre=tecnologias).first()
             habilidad_obj = Habilidad.query.filter_by(nombre=habilidades).first()
@@ -575,40 +613,71 @@ def postulacion():
                 flash("Error: Valores inválidos seleccionados.")
                 return redirect("/postulacion")
 
-            idedu = educacion_obj.idedu
-            idtec = tecnologia_obj.idtec
-            idhab = habilidad_obj.idhab
-            idtec2 = tecnologia2_obj.idtec2
-            idhab2 = habilidad2_obj.idhab2
+            if candidato:
+                candidato.experiencia = experiencia
+                candidato.idedu = educacion_obj.idedu
+                candidato.idtec = tecnologia_obj.idtec
+                candidato.idtec2 = tecnologia2_obj.idtec2
+                candidato.idhab = habilidad_obj.idhab
+                candidato.idhab2 = habilidad2_obj.idhab2
+                db.session.add(candidato)
+            else:
+                candidato = Candidato(
+                    id=email,
+                    nombre=nombre,
+                    apellido=apellido,
+                    mail=email,
+                    telefono=telefono,
+                    ubicacion=ubicacion,
+                    experiencia=experiencia,
+                    idedu=educacion_obj.idedu,
+                    idtec=tecnologia_obj.idtec,
+                    idtec2=tecnologia2_obj.idtec2,
+                    idhab=habilidad_obj.idhab,
+                    idhab2=habilidad2_obj.idhab2
+                )
+                db.session.add(candidato)
 
+            # Validación de postulación duplicada
+            if Postulacion.query.filter_by(idCandidato=candidato.id, idOfer=idOfer).first():
+                flash("❌Este candidato ya estaba postulado a la oferta seleccionada.", category="form")
+                return redirect("/postulacion")
 
-            # Crear y guardar el candidato
-            nuevo_candidato_db = Candidato(
-                id=email + idOfer,
-                nombre=nombre,
-                apellido=apellido,
-                mail=email,
-                telefono=telefono,
-                ubicacion=ubicacion,
-                experiencia=experiencia,
+            nueva_postulacion = Postulacion(
+                idCandidato=candidato.id,
                 idOfer=idOfer,
-                idedu=idedu,
-                idtec=idtec,
-                idhab=idhab,
-                idtec2=idtec2,
-                idhab2=idhab2,
-                aptitud=None
+                experiencia=experiencia,
+                idedu=educacion_obj.idedu,
+                idtec=tecnologia_obj.idtec,
+                idtec2=tecnologia2_obj.idtec2,
+                idhab=habilidad_obj.idhab,
+                idhab2=habilidad2_obj.idhab2,
+                aptitud=None,
+                puntaje=0
             )
-            db.session.add(nuevo_candidato_db)
-            db.session.commit()
-            flash(f"{nombre}, tu CV ha sido correctamente enviado a la oferta laboral de: '{OfertaLaboral.query.get(idOfer).nombre}'.")
-        except Exception as e:
-            flash(f"Este mail ya había sido registrado en esta postulación")
-            return redirect("/postulacion")
+            db.session.add(nueva_postulacion)
 
+            oferta.cant_candidatos += 1
+            db.session.add(oferta)
+            db.session.commit()
+
+            if oferta.cant_candidatos >= oferta.max_candidatos:
+                cerrar_url = request.host_url.rstrip("/") + url_for("cerrar_oferta", idOfer=oferta.idOfer)
+                try:
+                    requests.post(cerrar_url, cookies=request.cookies)
+                except Exception as e:
+                    flash("⚠️ No se pudo cerrar automáticamente la oferta. Intentalo manualmente.", "warning")
+
+            
+            flash(f"✔️Postulación de {nombre} registrada en la oferta '{oferta.nombre}'.", category="form")
+
+        except Exception as e:
+            flash("❌Error al procesar la postulación.", category="form")
+            return redirect("/postulacion")
+        
+    opciones_ofertas = [{"idOfer": o.idOfer, "nombre": o.nombre} for o in OfertaLaboral.query.filter(OfertaLaboral.estado != "Cerrada").all()]
     return render_template(
         "postulacion.html",
-        #es_admin=es_admin,
         opciones_ofertas=session["opciones_ofertas"],
         opciones_educacion=session["opciones_educacion"],
         opciones_tecnologias=session["opciones_tecnologias"],
@@ -780,9 +849,9 @@ def ver_ofertas():
         "Tipo": o.modalidad,
         "Estado": o.estado,
         "Responsable": o.usuario_responsable,
-        "Acción": f'<form style="display: inline-block; width: 110px; height: 35px; margin: 0 auto;" method="POST" action="{url_for("cerrar_oferta", idOfer=o.idOfer)}">'
+        "Acción": f'<form style="display: inline-block; margin: 0 auto; width: fit-content; background-color: #c53b3b" method="POST" action="{url_for("cerrar_oferta", idOfer=o.idOfer)}">'
                 f'<input type="hidden" name="forzar" value="1">'
-                f'<button style="font-size: 12px; margin: 0 !important; padding: 0 !important; width: 100px; height: 30px;" type="submit">Cerrar oferta</button></form>' 
+                f'<button style="font-size: 16px; margin: 0 !important; padding: 0 !important; width: 100px; height: 15px;" type="submit">Cerrar oferta</button></form>' 
                 if o.fecha_cierre > datetime.now() else "Oferta cerrada"
 
     } for o in ofertas])
@@ -993,11 +1062,20 @@ def predecir():
         except Exception as e:
             return f"Ocurrió un error al procesar el archivo: {e}"
 
+    if session.get("type")=="Admin_RRHH":
+        usuario = "Administrador"
+
+    if session.get("type")=="Supervisor":
+        usuario = "Supervisor"
+
+    if session.get("type")=="Analista_Datos":
+        usuario = "Analista"
+
     return render_template("index.html",ofertas_activas=ofertas_activas,ofertas_cerradas=ofertas_cerradas,
                            now=now,total_candidatos=total_candidatos,
                            cantidad_activas=cantidad_activas,porcentaje_activas=porcentaje_activas,
                            porcentaje_candidatos = porcentaje_candidatos, cantidad_cerradas = cantidad_cerradas,
-                           porcentaje_cerradas = porcentaje_cerradas,usuario=session.get("username"))
+                           porcentaje_cerradas = porcentaje_cerradas, usuario=usuario, show_home_icon=False)
 
 
 

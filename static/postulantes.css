@@ -59,19 +59,24 @@ body {
     }
 }
 
-h1 {
-    font-family: 'Anton', sans-serif;
+h1{
+    font-family: "Erica One", sans-serif;
     font-size: 3rem;
-    font-weight: 600;
-    color: #ffffff;
+    width: fit-content;
     text-align: center;
-    margin: 3rem auto 1rem;
-    border-radius: 10px;
-    border: 10px solid #ffffff;
-    padding: 1rem;
-    animation: elevar 2s ease-out forwards;
-    text-shadow: none;
-    box-shadow: none;
+    border-radius: 32px;
+    border: none;
+    color: #fefefe;
+    text-shadow: -3px 3px 0px #49007e, 3px -3px 0px #2f00d9;
+    transition: all 0.3s ease-in-out;
+    min-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 2rem;
+    padding: 0;
+    position: relative; /* <-- necesario para el before */
 }
 
 h1 .subtitulo {
@@ -111,7 +116,7 @@ form h3 {
 form {
     animation: elevar 2s ease-out forwards;
     margin: 3rem auto 4rem auto;
-    padding: 25px;
+    padding: 0;
     border-radius: 25px;
     width: 50%;
     text-align: center;
@@ -187,12 +192,12 @@ form p {
 }
 
 .custom-select {
-    background-color: #8415b8;
+    margin-top: -8rem !important;
+    background-color: #3815b8;
     color: white;
-    border: 2px solid #a18cff;
     border-radius: 10px;
     padding: 10px 15px;
-    font-size: 1rem;
+    font-size: 1.4rem;
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;

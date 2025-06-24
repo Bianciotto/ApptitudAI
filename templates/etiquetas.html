@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='etiquetas.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fragments/particles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fragments/titles.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/fragments/box-background.css') }}">
   <style>
     .carousel-chart {
@@ -23,15 +25,18 @@
 </head>
 
 <body class="container mt-4">
+  {% include "fragments/particles.html" %}
   {% include "layout/header_general.html" %}
   {% include "layout/menu.html" %}
+
+  <h1><p class="title-perfect-violet">Configurar </p><p class="title-match-blue">Etiquetas</p></h1>
+
   <main>
-    <form method="GET" action="{{ url_for('mostrar_etiquetas') }}">
-      <label for="idOfer">Selecciona una oferta laboral:</label>
-      <select name="idOfer" onchange="this.form.submit()">
+    <form method="GET" action="{{ url_for('mostrar_etiquetas') }}" style="background: transparent;">
+      <label for="idOfer" style="font-size: 1.4rem !important;">Selecciona una oferta laboral:</label>
+      <select name="idOfer" onchange="this.form.submit()" style="text-align: center; width: fit-content !important; font-size: 1.2rem; font-weight: bold;">
         {% for ofer in ofertas %}
         <option value="{{ ofer.idOfer }}" {% if ofer.idOfer|string==idOfer|string %}selected{% endif %}>
-
           {{ ofer.nombre }}
         </option>
         {% endfor %}
