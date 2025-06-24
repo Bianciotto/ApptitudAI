@@ -60,7 +60,16 @@ body {
 }
 
 
-
+.swal2-title.swal2-custom-title {
+    justify-self: center;
+    font-family: 'Roboto', Arial, sans-serif !important;
+    font-size: 1.5rem !important;
+    color: #509b41 !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
+    border: none !important;
+    margin-bottom: 0.5em !important;
+}
 
 
 h1 {

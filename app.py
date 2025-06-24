@@ -804,8 +804,6 @@ def cerrar_oferta(idOfer):
 
     forzar = request.form.get("forzar")
 
-    print("Form data:", request.form)
-    print("Valor de forzar:", request.form.get("forzar"))
     if forzar == "1" or oferta.fecha_cierre <= datetime.now() or oferta.cant_candidatos >= oferta.max_candidatos:
         oferta.fecha_cierre = datetime.now()
         oferta.estado = "Cerrada"
@@ -815,9 +813,9 @@ def cerrar_oferta(idOfer):
         enviar_correos_automatica(oferta.idOfer)
 
         db.session.commit()
-        flash(f"La oferta '{oferta.nombre}' ha sido cerrada correctamente.", "success")
+        flash(f"La oferta ha sido cerrada correctamente.", category="ver_ofertas")
     else:
-        flash("La oferta aún no puede cerrarse automáticamente.", "warning")
+        flash("La oferta aún no puede cerrarse automáticamente.", category="ver_ofertas")
 
     return redirect(url_for("ver_ofertas"))
 

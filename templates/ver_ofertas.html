@@ -50,14 +50,23 @@
     </form>
     {% endif %}
   </div>
-  {% with messages = get_flashed_messages() %}
-  {% if messages %}
-  <div class="flash-messages">
-    {% for message in messages %}
-    <div class="alert">{{ message|safe }}</div>
-    {% endfor %}
-  </div>
-  {% endif %}
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  {% with messages = get_flashed_messages(category_filter=["ver_ofertas"]) %}
+      {% if messages %}
+          <script>
+              window.addEventListener('DOMContentLoaded', () => {
+                  Swal.fire({
+                      icon: 'success',
+                      title: 'Oferta cerrada con exito',
+                      text: '{{ messages[0] }}',
+                      confirmButtonColor: '#4dda31',
+                      customClass: {
+                          title: 'swal2-custom-title'
+                      }
+                  });
+              });
+          </script>
+      {% endif %}
   {% endwith %}
   {% include "layout/footer.html" %}
 </body>
