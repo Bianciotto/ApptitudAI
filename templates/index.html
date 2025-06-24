@@ -68,19 +68,19 @@
           <div class="ofertas-grid" id="ofertas-activas-grid">
               <!-- Tarjeta para crear nueva oferta -->
               <div class="oferta-card add" onclick="window.location.href='/crear_oferta';">
+                <div style="font-size: 25px;">Crear Oferta</div>
                 <span>+</span>
-                <div style="font-size: 14px;">Crear Oferta</div>
               </div>
               {% for oferta in ofertas_activas %}
               <div class="oferta-card" data-oferta-id="{{ oferta.idOfer }}">
                 <div class="oferta-summary">
                   <h3>{{ oferta.nombre }}</h3>
-                  <p>{{ oferta.ubicacion or 'Ubicación no especificada' }}</p>
-                  <div class="oferta-fecha">Desde: {{ oferta.fecha_inicio.strftime('%Y-%m-%d') if oferta.fecha_inicio else 'Sin fecha' }}</div>
+                  <p>Tipo: <strong>{{ oferta.modalidad or 'Modalidad no especificada' }}</strong></p>
+                  <p>Remuneración: <strong>{{ oferta.remuneracion or 'No especificada' }}</strong></p>
+                  <p>Máx. Candidatos: <strong>{{ oferta.max_candidatos or 'No especificado' }}</strong></p>
+                  <div class="oferta-fecha">Hasta: {{ oferta.fecha_cierre.strftime('%Y-%m-%d') if oferta.fecha_cierre else 'Sin fecha' }}</div>
                 </div>
                 <div class="oferta-detalles" style="display:none;">
-                  <p><strong>Remuneración:</strong> {{ oferta.remuneracion or 'No especificada' }}</p>
-                  <p><strong>Máximo de Candidatos:</strong> {{ oferta.max_candidatos or 'No especificado' }}</p>
                   <p><strong>Beneficio:</strong> {{ oferta.beneficio or 'No especificado' }}</p>
                   <p><strong>Descripción:</strong> {{ oferta.descripcion or 'No especificada' }}</p>
                   <button class="btn-etiquetas" onclick="event.stopPropagation(); window.location.href='/etiquetas?idOfer={{ oferta.idOfer }}';">Etiquetas</button>
@@ -98,14 +98,14 @@
             <div class="oferta-card oferta-cerrada" data-oferta-id="cerrada-{{ oferta.idOfer }}">
               <div class="oferta-summary">
                 <h3>{{ oferta.nombre }}</h3>
-                <p>{{ oferta.beneficio or 'Sin descripción' }}</p>
+                  <p>Tipo: <strong>{{ oferta.modalidad or 'Modalidad no especificada' }}</strong></p>
+                  <p>Remuneración: <strong>{{ oferta.remuneracion or 'No especificada' }}</strong></p>
+                  <p>Máx. Candidatos: <strong>{{ oferta.max_candidatos or 'No especificado' }}</strong></p>
                 <p class="oferta-fecha">Cerrada hace {{ (now - oferta.fecha_cierre).days }} días</p>
               </div>
               <div class="oferta-detalles" style="display:none;">
-                <p><strong>Remuneración:</strong> {{ oferta.remuneracion or 'No especificada' }}</p>
-                <p><strong>Máximo de Candidatos:</strong> {{ oferta.max_candidatos or 'No especificado' }}</p>
-                <p><strong>Beneficio:</strong> {{ oferta.beneficio or 'No especificado' }}</p>
-                <p><strong>Descripción:</strong> {{ oferta.descripcion or 'No especificada' }}</p>
+                  <p><strong>Beneficio:</strong> {{ oferta.beneficio or 'No especificado' }}</p>
+                  <p><strong>Descripción:</strong> {{ oferta.descripcion or 'No especificada' }}</p>
                 <button class="btn-etiquetas" onclick="event.stopPropagation(); window.location.href='/etiquetas?idOfer={{ oferta.idOfer }}';">Etiquetas</button>
                 
               </div>
@@ -202,38 +202,6 @@ function createGauge(ctx, value, max, colors) {
         }
       });
     </script>
-    <style>
-    .oferta-card .oferta-detalles {
-      transition: max-height 0.3s ease, padding 0.3s, background 0.3s;
-      overflow: hidden;
-      background: rgba(44,0,80,0.92);
-      border-radius: 1rem;
-      margin-top: 10px;
-      padding: 0 8px;
-    }
-    .oferta-card.expanded {
-      z-index: 2;
-      box-shadow: 0 8px 32px 0 #7644ff99, 0 2px 16px 0 #00c3ff99;
-      border-color: #00c3ff;
-    }
-    .btn-etiquetas {
-      margin-top: 10px;
-      padding: 0.5em 1.2em;
-      background: #7644ff;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 1em;
-      cursor: pointer;
-      transition: background 0.2s, color 0.2s;
-      box-shadow: 0 2px 8px #7644ff33;
-    }
-    .btn-etiquetas:hover {
-      background: #00c3ff;
-      color: #fff;
-    }
-    </style>
   </main>
   {% include "layout/footer.html" %}
 </body>

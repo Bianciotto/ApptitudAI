@@ -98,12 +98,11 @@ class OfertaLaboral(db.Model):
     usuario_responsable = db.Column(db.String(100), nullable=False)
 
     postulaciones = db.relationship("Postulacion", back_populates="oferta", cascade="all, delete-orphan", lazy=True)
-    educaciones = db.relationship("OfertaEducacion", back_populates="oferta", lazy=True)
-    tecnologias = db.relationship("OfertaTecnologia", back_populates="oferta", lazy=True)
-    tecnologias2 = db.relationship("OfertaTecnologia2", back_populates="oferta", lazy=True)
-    habilidades = db.relationship("OfertaHabilidad", back_populates="oferta", lazy=True)
-    habilidades2 = db.relationship("OfertaHabilidad2", back_populates="oferta", lazy=True)
-
+    educaciones = db.relationship("OfertaEducacion", back_populates="oferta", cascade="all, delete-orphan", lazy=True)
+    tecnologias = db.relationship("OfertaTecnologia", back_populates="oferta", cascade="all, delete-orphan", lazy=True)
+    tecnologias2 = db.relationship("OfertaTecnologia2", back_populates="oferta", cascade="all, delete-orphan", lazy=True)
+    habilidades = db.relationship("OfertaHabilidad", back_populates="oferta", cascade="all, delete-orphan", lazy=True)
+    habilidades2 = db.relationship("OfertaHabilidad2", back_populates="oferta", cascade="all, delete-orphan", lazy=True)
 
 
 # Tablas intermedias para asociar cada oferta con sus etiquetas
@@ -747,7 +746,9 @@ def crear_oferta():
                 nueva_oferta.cant_candidatos += len(candidatos)
 
 
-            db.session.commit()  
+            db.session.commit()
+            if nueva_oferta.modalidad == "Local":
+                cerrar_oferta_automatica(nueva_oferta.idOfer)
             flash(f"✔️Oferta '{nombre}' creada con éxito, con estado '{nueva_oferta.estado}', modalidad '{nueva_oferta.modalidad}' y etiquetas asignadas", "success")
             return redirect("/crear_oferta")
         
@@ -776,7 +777,6 @@ def ver_ofertas():
         "Cantidad Máx. de Candidatos": o.max_candidatos,
         "Remuneración": o.remuneracion,
         "Beneficio": o.beneficio,
-        "Descripción": o.descripcion,
         "Tipo": o.modalidad,
         "Estado": o.estado,
         "Responsable": o.usuario_responsable,
@@ -805,14 +805,7 @@ def cerrar_oferta(idOfer):
     forzar = request.form.get("forzar")
 
     if forzar == "1" or oferta.fecha_cierre <= datetime.now() or oferta.cant_candidatos >= oferta.max_candidatos:
-        oferta.fecha_cierre = datetime.now()
-        oferta.estado = "Cerrada"
-
-        predecir_postulantes_automatica(oferta.idOfer)
-        asignar_puntajes_automatica(oferta.idOfer)
-        enviar_correos_automatica(oferta.idOfer)
-
-        db.session.commit()
+        cerrar_oferta_automatica(idOfer)
         flash(f"La oferta ha sido cerrada correctamente.", category="ver_ofertas")
     else:
         flash("La oferta aún no puede cerrarse automáticamente.", category="ver_ofertas")
@@ -1099,6 +1092,19 @@ def postulantes():
     total_pages=total_pages
 )
 
+def cerrar_oferta_automatica(idOfer):
+    oferta = OfertaLaboral.query.get(idOfer)
+    if not oferta or oferta.estado == "Cerrada":
+        return False
+    oferta.fecha_cierre = datetime.now()
+    oferta.estado = "Cerrada"
+    predecir_postulantes_automatica(oferta.idOfer)
+    asignar_puntajes_automatica(oferta.idOfer)
+    enviar_correos_automatica(oferta.idOfer)
+    db.session.commit()
+    return True
+
+
 def predecir_postulantes_automatica(idOfer):
     # 📌 Obtener las postulaciones de la oferta
     postulaciones = Postulacion.query.filter_by(idOfer=idOfer).all()
@@ -1136,7 +1142,6 @@ def asignar_puntajes_automatica(idOfer):
         db.session.add(p)  #  Agregamos la postulación actualizada
 
     db.session.commit()  #  Guardamos cambios en la base de datos
-
 
 
 def enviar_correos_automatica(idOfer):

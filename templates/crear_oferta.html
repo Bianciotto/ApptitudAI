@@ -21,10 +21,14 @@
   <h1>Crear Nueva <span class="subtitulo">Oferta Laboral</span></h1>
 
   <form method="POST" action="{{ url_for('crear_oferta') }}">
-    <span></span>
-    <span></span>
-    <span></span>
-    <span></span>
+
+    <label for="modalidad">Modalidad de la oferta:</label>
+    <select name="modalidad" required>
+      <option value="" disabled selected>-- Selecciona una opción --</option>
+      <option value="Local">Local</option>
+      <option value="Externa">Externa</option>
+      <option value="Mixta">Mixta</option>
+    </select>
 
     <label for="nombre">Nombre de la oferta:</label>
     <input type="text" name="nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ' 0-9]+" minlength="5" maxlength="50" title="Debe tener entre 5 y 50 caracteres. Solo letras, números y apóstrofes." required>
@@ -43,14 +47,6 @@
     
     <label for="descripcion">Descripción de la oferta:</label>
     <textarea name="descripcion" rows="4" minlength="10" maxlength="200" placeholder="Describe brevemente la oferta (máximo 200 caracteres)" required></textarea>
-
-    <label for="modalidad">Modalidad de la oferta:</label>
-    <select name="modalidad" required>
-      <option value="" disabled selected>-- Selecciona una opción --</option>
-      <option value="Local">Local</option>
-      <option value="Mixta">Mixta</option>
-      <option value="Externa">Externa</option>
-    </select>
 
     <p>Usuario responsable: <strong>{{ session.get('username') }}</strong></p>
 

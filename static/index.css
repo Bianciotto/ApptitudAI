@@ -351,7 +351,6 @@ h1{
   border: none;
   padding: 0;
   border-radius: 12px;
-  box-shadow: 0 2px 16px 0 #7644ff22;
   transition: box-shadow 0.2s, filter 0.2s;
   width: 70%;
   margin-left: auto;
@@ -361,7 +360,7 @@ h1{
 
 .ofertas-title:hover {
   filter: brightness(1.08) drop-shadow(0 0 8px #00c3ff88);
-  box-shadow: 0 4px 24px 0 #7644ff44;
+
 }
 
 .ofertas-grid {
@@ -652,7 +651,6 @@ h1{
 }
 /* ESTILOS PARA EL BOTÓN DE ELIMINAR OFERTA */
 .btn-eliminar-oferta {
-  margin-top: 1.2em;
   padding: 0;
   background: transparent;
   color: #ff3b3b;
@@ -673,4 +671,40 @@ h1{
   border: 2.5px solid #d10000;
   box-shadow: 0 0 8px #d1000055;
   color: #d10000;
+}
+
+.oferta-card .oferta-detalles {
+  transition: max-height 0.3s ease, padding 0.3s, background 0.3s;
+  overflow: hidden;
+  background: rgba(44,0,80,0.92);
+  border-radius: 1rem;
+  margin-top: 10px;
+  padding: 0 8px;
+}
+.oferta-card.expanded {
+  z-index: 2;
+  box-shadow: 0 8px 32px 0 #7644ff99, 0 2px 16px 0 #00c3ff99;
+  border-color: #00c3ff;
+}
+.btn-etiquetas {
+  margin-top: 10px;
+  margin-bottom: 40px;
+  padding: 0.5em 1.2em;
+  background: #7644ff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 2px 8px #7644ff33;
+}
+.btn-etiquetas:hover {
+  background: #00c3ff;
+  color: #fff;
+}
+
+.oferta-fecha {
+  margin-bottom: 5px !important;
 }
