@@ -12,33 +12,55 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fragments/particles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fragments/titles.css') }}">
-  </head>
+</head>
 
 <body >
   {% include "fragments/particles.html" %}
   {% include "layout/header_general.html" %}
   {% include "layout/menu.html" %}
+  
   <main>
-  <h1 class="subrayado-multicolor "><p >ApptitudAI</p></h1>
-  <h1><p class="title-perfect-violet">Bienvenido</p><p class="title-match-blue">{{ usuario }}</p></h1>
+    <h1 class="subrayado-multicolor "><p >ApptitudAI</p></h1>
+    <h1><p class="title-perfect-violet">Bienvenido</p><p class="title-match-blue">{{ usuario }}</p></h1>
   <div class="prediccion-panel">
     <!-- Contenedor de gauges con glow -->
     <div class="gauges-container">
       <div class="gauges-section" style="margin-bottom: 40px;">
         <div class="gauge-card">
-          <canvas id="gauge1" width="160" height="80"></canvas>
-          <div class="gauge-label">Ofertas activas</div>
-            </div>
-            <div class="gauge-card">
-                <canvas id="gauge2" width="160" height="80"></canvas>
-                <div class="gauge-label">Candidatos postulados</div>
-            </div>
-            <div class="gauge-card">
-                <canvas id="gauge3" width="160" height="80"></canvas>
-                <div class="gauge-label">Ofertas cerradas</div>
-            </div>
+            <div class="gauge-header">
+            <i class="fa-solid fa-clock"></i>
+            <span class="gauge-label">Ofertas activas</span>
+          </div>
+          <div class="gauge-grafico">
+              <canvas id="gauge1" width="160" height="80"></canvas>
+              <div id="porcentaje1" class="gauge-porcentaje">{{ porcentaje_activas }}%</div>
+          </div>
+          <div class="gauge-numero">{{ cantidad_activas }}</div>
+        </div>
+        <div class="gauge-card">
+          <div class="gauge-header">
+             <i class="fa-solid fa-person"></i>
+             <span class="gauge-label">Candidatos postulados</span>
+          </div>                
+          <div class="gauge-grafico">
+            <canvas id="gauge2" width="160" height="80"></canvas>
+            <div id="porcentaje2" class="gauge-porcentaje">{{ porcentaje_candidatos }}%</div>
+          </div>
+          <div class="gauge-numero">{{total_candidatos}}</div>
+        </div>
+        <div class="gauge-card">
+          <div class="gauge-header">
+            <i class="fa-solid fa-check"></i>
+            <span class="gauge-label">Ofertas cerradas</span>
+          </div>
+          <div class="gauge-grafico">
+            <canvas id="gauge3" width="160" height="80"></canvas>
+            <div id="porcentaje3" class="gauge-porcentaje">{{ porcentaje_cerradas }}%</div>       
+          </div>
+          <div class="gauge-numero">{{cantidad_cerradas}}</div>               
         </div>
       </div>
+    </div>
 
       <!-- Contenedor de ofertas activas -->
       <div class="ofertas-section">
@@ -85,54 +107,54 @@
                 <p><strong>Beneficio:</strong> {{ oferta.beneficio or 'No especificado' }}</p>
                 <p><strong>Descripción:</strong> {{ oferta.descripcion or 'No especificada' }}</p>
                 <button class="btn-etiquetas" onclick="event.stopPropagation(); window.location.href='/etiquetas?idOfer={{ oferta.idOfer }}';">Etiquetas</button>
-                {% if session.get('type') == 'Admin_RRHH' %}
+                
+              </div>
+              {% if session.get('type') == 'Admin_RRHH' %}
                 <form method="POST" action="{{ url_for('eliminar_oferta', idOfer=oferta.idOfer) }}" style="width:100%;text-align:right;">
                   <button type="submit" class="btn-eliminar-oferta{% if (now - oferta.fecha_cierre).days > 1 %} cerrada-mas-1dia{% endif %}">Eliminar</button>
                 </form>
-                {% endif %}
-              </div>
+              {% endif %}
             </div>
             {% endfor %}
           </div>
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Datos de ejemplo para los gauges
-        const gaugeData = [5, 23, 2];
-        const gaugeMax = [10, 50, 10];
-        const gaugeColors = [
-            ['#4caf50', '#e0e0e0'],
-            ['#2196f3', '#e0e0e0'],
-            ['#f44336', '#e0e0e0']
-        ];
-        function createGauge(ctx, value, max, colors) {
-            return new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [value, max - value],
-                        backgroundColor: colors,
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    rotation: -90,
-                    circumference: 180,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false },
-                        title: { display: false },
-                    },
-                    responsive: false
-                }
-            });
+    
+<script>
+const gaugeColors = [
+    ['#4caf50', '#e0e0e0'],
+    ['#2196f3', '#e0e0e0'],
+    ['#f44336', '#e0e0e0']
+    ];
+function createGauge(ctx, value, max, colors) {
+    return new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [value, max - value],
+                backgroundColor: colors,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            rotation: -90,
+            circumference: 180,
+            cutout: '70%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false },
+                title: { display: false },
+            },
+            responsive: false
         }
-        createGauge(document.getElementById('gauge1'), gaugeData[0], gaugeMax[0], gaugeColors[0]);
-        createGauge(document.getElementById('gauge2'), gaugeData[1], gaugeMax[1], gaugeColors[1]);
-        createGauge(document.getElementById('gauge3'), gaugeData[2], gaugeMax[2], gaugeColors[2]);
+    });
+}
+    createGauge(document.getElementById('gauge1'), parseInt(document.getElementById('porcentaje1').textContent), 100, gaugeColors[0]);
+    createGauge(document.getElementById('gauge2'), parseInt(document.getElementById('porcentaje2').textContent), 100, gaugeColors[1]);
+    createGauge(document.getElementById('gauge3'), parseInt(document.getElementById('porcentaje3').textContent), 100, gaugeColors[2]);
     </script>
+
     <script>
         // Ejemplo: agregar clase roja si la oferta lleva más de 1 día cerrada (esto sería dinámico en backend)
         document.querySelectorAll('.oferta-card.oferta-cerrada').forEach(card => {

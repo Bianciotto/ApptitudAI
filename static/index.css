@@ -32,6 +32,7 @@ body {
   }
 }
 
+
 h1{
   font-family: "Erica One", sans-serif;
   font-size: 3rem;
@@ -51,8 +52,6 @@ h1{
   padding: 0;
   position: relative; /* <-- necesario para el before */
 }
-
-
 
 
 @keyframes elevar {
@@ -191,13 +190,23 @@ h1{
   border-color: #00c3ff;
 }
 
+.gauge-header{
+  display: inline-block;
+  margin-bottom: 1.1rem;
+
+}
+
 .gauge-label {
-  margin-top: 1.1rem;
   font-weight: 600;
   color: #b7baff;
-  font-size: 1.13rem;
+  font-size: 0.8rem;
   letter-spacing: 0.5px;
   text-shadow: 0 1px 8px #2a0047cc;
+  padding-left: 2px;
+}
+
+.gauge-grafico{
+  position: relative;
 }
 
 .gauges-section canvas {
@@ -209,6 +218,22 @@ h1{
   max-width: 165px;
   max-height: 82.5px;
   /* Mantener la altura original para no afectar la proporción vertical */
+}
+
+.gauge-porcentaje{
+  position: absolute;
+  bottom:10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
+}
+
+.gauge-numero{
+  padding-top: 10px;
+  color:#b7baff;
+  font-size: 1.6rem;
+  font-weight: bolder;
+  border-bottom: 1px solid #964dcacc;
 }
 
 @media (max-width: 900px) {
@@ -270,7 +295,6 @@ h1{
   .prediccion-panel {
     margin-top: 80px !important;
   }
-  
   .gauges-container {
     padding: 10px 2vw 10px 2vw;
     max-width: 99vw;
@@ -312,9 +336,7 @@ h1{
   overflow: visible;
   margin-bottom: 2rem;
 }
-@media screen {
-  
-}
+
 
 .ofertas-title {
   font-family: 'Poppins', sans-serif;
@@ -351,6 +373,7 @@ h1{
   box-sizing: border-box;
   justify-items: center;
   margin: 0 auto; /* centra el grid dentro del contenedor */
+  margin-bottom: 2rem;
 }
 
 .oferta-card {
@@ -523,6 +546,7 @@ h1{
     grid-template-columns: 1fr;
     gap: 1rem;
     margin: 0 auto;
+    margin-bottom: 2rem;
     padding: 0;
   }
 }
@@ -600,7 +624,7 @@ h1{
 
 /* ESTILOS PARA EL BOTÓN DE ELIMINAR OFERTA */
 .btn-eliminar-oferta {
-  width: 50px;
+  width: 80%;
   height: 50px;
   border-radius: 50%;
   background-color: rgb(255, 69, 69);
@@ -626,42 +650,27 @@ h1{
 .svgIcon path {
   fill: white;
 }
+/* ESTILOS PARA EL BOTÓN DE ELIMINAR OFERTA */
+.btn-eliminar-oferta {
+  margin-top: 1.2em;
+  padding: 0;
+  background: transparent;
+  color: #ff3b3b;
+  border: 2px solid #ff3b3b;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border 0.2s, background 0.2s, color 0.2s;
+}
 
 .btn-eliminar-oferta:hover {
-  width: 140px;
-  border-radius: 50px;
-  transition-duration: .3s;
-  background-color: rgb(255, 69, 69);
-  align-items: center;
+  background: #ff3b3b;
+  color: #fff;
 }
 
-.btn-eliminar-oferta:hover .svgIcon {
-  width: 50px;
-  transition-duration: .3s;
-  transform: translateY(60%);
-}
-
-.btn-eliminar-oferta::before {
-  position: absolute;
-  top: -20px;
-  content: "Delete";
-  color: white;
-  transition-duration: .3s;
-  font-size: 2px;
-}
-
-.btn-eliminar-oferta:hover::before {
-  font-size: 13px;
-  opacity: 1;
-  transform: translateY(30px);
-  transition-duration: .3s;
-}
 .btn-eliminar-oferta.cerrada-mas-1dia {
   border: 2.5px solid #d10000;
   box-shadow: 0 0 8px #d1000055;
   color: #d10000;
 }
-
-
-
-

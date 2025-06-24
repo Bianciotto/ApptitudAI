@@ -920,6 +920,13 @@ def predecir():
     now = datetime.now()
     total_candidatos = Candidato.query.count()
 
+    oferta_total = OfertaLaboral.query.count()
+    cantidad_activas = len(ofertas_activas)
+    cantidad_cerradas = len(ofertas_cerradas)
+    porcentaje_activas = int((cantidad_activas / oferta_total) * 100) if oferta_total > 0 else 0
+    porcentaje_candidatos = int((total_candidatos / 1000) * 100) if total_candidatos > 100 else int((total_candidatos / 100) * 100)
+    porcentaje_cerradas = int((cantidad_cerradas / oferta_total) * 100) if oferta_total > 0 else 0
+    
     if request.method == "POST":
         # 📌 Verifica que el archivo CSV esté en la solicitud
         if "archivo_csv" not in request.files:
@@ -995,7 +1002,11 @@ def predecir():
         except Exception as e:
             return f"Ocurrió un error al procesar el archivo: {e}"
 
-    return render_template("index.html", ofertas_activas=ofertas_activas, ofertas_cerradas=ofertas_cerradas, now=now, total_candidatos=total_candidatos,usuario=session.get("username"))
+    return render_template("index.html",ofertas_activas=ofertas_activas,ofertas_cerradas=ofertas_cerradas,
+                           now=now,total_candidatos=total_candidatos,
+                           cantidad_activas=cantidad_activas,porcentaje_activas=porcentaje_activas,
+                           porcentaje_candidatos = porcentaje_candidatos, cantidad_cerradas = cantidad_cerradas,
+                           porcentaje_cerradas = porcentaje_cerradas,usuario=session.get("username"))
 
 
 
