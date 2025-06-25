@@ -22,12 +22,10 @@
         </div>
     </header>
     <main>
+        <h1 style = "box-shadow: none !important;"><p class="title-perfect-violet">Nuestras</p><p class="title-match-blue">Ofertas</p></h1>
 
         <!-- Contenedor de ofertas activas -->
         <div class="ofertas-section">
-            <div class="ofertas-title">
-                <h1 style = "box-shadow: none !important;"><p class="title-perfect-violet">Nuestras</p><p class="title-match-blue">Ofertas</p></h1>
-            </div>
             <div class="ofertas-grid" id="ofertas-activas-grid">
                 {% for oferta in ofertas_activas %}
                 <div class="oferta-card" data-oferta-id="{{ oferta.idOfer }}">
