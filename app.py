@@ -554,6 +554,7 @@ def postulacion():
 
     if request.method == "POST":
         if "cv_pdf" in request.files:
+            session["idOfer"] = request.form.get("idOfer")
             file = request.files["cv_pdf"]
             if file and file.filename.endswith(".pdf"):
                 # revisar si pesa menos de 5MB:
@@ -576,7 +577,8 @@ def postulacion():
                         opciones_habilidades=opciones_habilidades,
                         opciones_tecnologias2=opciones_tecnologias2,
                         opciones_habilidades2=opciones_habilidades2,
-                        precargado=info
+                        precargado=info,
+                        oferta_seleccionada=OfertaLaboral.query.get(session.get("idOfer")) if session.get("idOfer") else None
                     )
                 except Exception:
                     flash("❌El archivo no es un PDF válido o está dañado.", category="pdf")
@@ -596,12 +598,13 @@ def postulacion():
         habilidades = request.form["habilidades"]
         tecnologias2 = request.form["tecnologias2"]
         habilidades2 = request.form["habilidades2"]
-        idOfer = request.form.get("idOfer")
+        idOfer = request.form.get("idOfer") or session.get("idOfer")
 
         if not idOfer:
             flash("Debes seleccionar una oferta laboral.", category="form")
             return redirect("/postulacion")
 
+        idOfer = int(idOfer)
         try:
             oferta = OfertaLaboral.query.get(idOfer)
 
@@ -691,7 +694,8 @@ def postulacion():
         opciones_tecnologias=session["opciones_tecnologias"],
         opciones_habilidades=session["opciones_habilidades"],
         opciones_tecnologias2=session["opciones_tecnologias2"],
-        opciones_habilidades2=session["opciones_habilidades2"]
+        opciones_habilidades2=session["opciones_habilidades2"],
+        oferta_seleccionada=OfertaLaboral.query.get(session.get("idOfer")) if session.get("idOfer") else None
     )
 
 @app.route('/crear_oferta', methods=['GET', 'POST'])
@@ -1819,6 +1823,12 @@ def actualizar_importancia(tipo, id):
     relacion = db.session.get(modelo, id)
     if not relacion:
         return jsonify({"error": "Etiqueta no encontrada"}), 404
+    
+    oferta = OfertaLaboral.query.get(relacion.idOfer)
+    if not oferta:
+        return jsonify({"error": "Oferta no encontrada"}), 404
+    if oferta.estado == "Cerrada":
+        return jsonify({"error": "No se puede modificar una oferta cerrada"}), 400
 
     relacion.importancia = importancia
     db.session.commit()
